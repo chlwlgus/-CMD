@@ -1,0 +1,47 @@
+라우터 생성
+R1)
+
+en
+conf t
+host R1
+
+int f0/0
+ip add 192.168.1.254 255.255.255.0
+no sh
+exit
+
+int f0/1
+ip add 10.1.10.254 255.255.255.0
+no sh
+exit
+
+
+PC0 생성
+
+PC0 선택
+위에 Desktop 탭 선택
+IP Configuration 선택
+
+IPv4 Address 192.168.1.1
+Subnet Mask 255.255.255.0
+Default Gateway 192.168.1.254
+
+
+PC1 생성
+
+PC1 선택
+위에 Desktop 탭 선택
+IP Configuration 선택
+
+IPv4 Address 10.1.10.1
+Subnet Mask 255.255.255.0
+Default Gateway 10.1.10.254
+
+
+PC0에서 PC1로 핑 보내기
+
+PC0 선택
+위에 Desktop 탭 선택
+Cpmmand Prompt
+ping 10.1.10.254 (pc1의 게이트웨이까지 핑 확인)
+ping 10.1.10.1 (PC1까지 핑 확인)
