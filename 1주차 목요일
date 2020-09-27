@@ -1,0 +1,53 @@
+SW1)
+
+en
+conf t
+no ip routing
+exit
+
+
+VyOSI)
+
+conf t
+set interface ehernet eth0 address 192.168..1.254/24 255.255.255.0
+set interface ehernet eth0 address 2.2.12.1/24
+commit
+run ping 2.2.12.2
+set protocols static route 192.168.3.0/24 next-hop 2.2.12.2
+commit
+run show ip route
+192.168.1.254/24(255.255.255.0)
+
+
+PC1)
+ip 192.168.1.1 255.255.255.0
+
+clear arp
+show arp
+ping 192.168.3.1
+
+
+PC2)
+ip 192.168.3.1 255.255.255.0
+
+
+PC3)
+ip 192.168.1.2 255.255.255.0
+
+
+R1)
+
+en
+con t
+int f0/0
+ip add 2.2.212.2 255.255.255.0
+no sh
+exit
+
+int f0/1
+ip add 192.168.3.254 255.255.255.0
+no sh
+exit
+
+ip route 192.168.1.0 255.255.255.0 f0/0 2.2.12.1
+show ip
