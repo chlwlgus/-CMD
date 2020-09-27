@@ -1,0 +1,79 @@
+SW1)
+show spanning-tree
+
+SW1 > 32769 000D.BD77.2A17
+SW2 > 32769 000A.F3CC.EC3C
+SW3 > 32769 0090.0CCE.61B5
+SW4 > 32769 000A.F3B0.7ECA
+SW5 > 32769 00D0.58B4.AB2C
+SW6 > 32769 0007.ECE9.1333
+SW7 > 32769 0002.1694.CC15
+
+SW3)
+EN
+CONF T
+INT F0/10
+SPANING-TREE PORTF ?
+<대기 시간이 걸리지 않고 바로 연결됨>
+
+DO SH SPAN
+
+--------------------------
+
+스위치를 ROOT BRIDGE로 변경하는 방법
+1. BID의 우선순위를 변경
+  - spanning-tree vlan ? priority ?? 명령 이용
+  - spanning-tree vlan ? root primary  명령 이용
+                                     secondary 
+- 현재 blocking 상태의 포트는 다른 링크에 장애가 발생한 경우에만 포워딩 상태로 변경되어 사용된다. 
+  즉, 포트에 가용성이 떨어진다. 따라서 포트의 가용성을 높히기 위해 pvst를 이용하여 vlan별로 루트브리지를 다르게
+  설정한다.
+- vlan 별로 stp를 동작시키고 루트 브리지를 다르게 설정하면 한 vlan에서는 blocking 상태의 포트가 다른 vlan에서는
+  forwarding 상태가 되어 포트의 가용성을 높힐 수 있다.
+
+
+sw2)
+sh span
+conf t
+spanning-tree vlan 1 priority 1
+spanning-tree vlan 1 priority 4096
+
+
+sw1)
+sh span
+conf t
+spanning-tree vlan 1 priority 1
+spanning-tree vlan 1 priority 8192
+
+
+sw4)
+sh span
+conf t
+spanning-tree vlan 1 priority 0 (이러면 우선순위가 0이므로 루트브리지였던 sw2에서 이걸로 루트브리지가 넘어오게된다.)
+
+
+sw123)
+en
+conf t
+vlan 2
+
+
+sw1)
+spanning-tree vlan 2 priority 4096
+
+int range f0/1-2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+
+sw2)
+int range f0/2-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+
+sw3)
+int range f0/1,f0/3
+switchport mode trunk
+
+이렇게 하면 모든 연결이 가능 블락이 사라짐
