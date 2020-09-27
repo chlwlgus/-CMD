@@ -1,0 +1,40 @@
+PC-PC Console Terminal)
+
+위쪽 탭에 Terminal 선택
+en
+conf t
+int s0/1/0
+ip add 192.168.0.29 255.255.255.252
+no sh
+exit
+
+int f0/0
+ip add 192.168.0.14 255.255.255.240
+no sh
+exit
+
+int f0/1
+ip add 192.168.0.22 255.255.255.248
+no sh
+exit
+
+int s0/0/0
+ip add 192.168.0.253 255.255.255.252
+no sh
+exit
+
+ip route 0.0.0.0 0.0.0.0 s0/0/0
+
+
+PC-PT Host1 in LAN1)
+IPv4 Address 192.168.0.1
+Subnet Mask 255.255.255.240
+Default Gateway 192.168.0.14
+
+
+PC-PT Host1 in LAN2)
+IPv4 Address 192.168.0.17
+Subnet Mask 255.255.255.248
+Default Gateway 192.168.0.22
+
+위에 설정한 pc에서 Server ip 주소인 192.168.0.33으로 핑을 보내어 네트워크 연결 확인
