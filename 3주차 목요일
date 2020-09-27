@@ -1,0 +1,210 @@
+1. 스위치간 링크를 모두 트렁크로 설정
+
+  DSW1)
+  en
+  conf t
+  host DSW1
+  int range f0/1-3
+  switchport mode dynamic desirable
+
+
+  DSW2)
+  en
+  conf t
+  host DSW2
+  int range f0/3-4
+  switchport mode dynamic desirable
+
+  트렁크 포트 확인
+  show interface trunk
+
+2. VLAN 생성
+
+   DSW1, DSW2 - 10,20,30,40
+   ASW1 - 10, 20
+   ASW2 - 30, 40
+
+3. VLAN 1,10,20의 Primary Root Bridge : DSW1
+   VLAN 1,10,20의 Secondary Root Bridge : DSW2  
+
+   => root primary, secondary 명령 이용
+
+   DSW1)
+   spanning-tree vlan 1,10,20 root primary
+   DSW2)
+   spanning-tree vlan 1,10,20 root secondary
+
+   VLAN 30,40의 Primary Root Bridge : DSW2 (4096)
+   VLAN 30,40의 Secondary Root Bridge : DSW1 (8192)
+ 
+   => priority 직접 변경
+   DSW2)
+   spanning-tree vlan 30,40 priority 4096
+   DSW1)
+   spanning-tree vlan 30,40 priority 8192
+  
+4. ASW1과 DSW1,DSW2사이의 Trunk 링크에는 
+   VLAN 10,20만 허용
+
+   ASW2과 DSW1,DSW2사이의 Trunk 링크에는 
+   VLAN 30,40만 허용
+
+   DSW1)
+   int f0/2
+   switchport trunk allowed vlan 10,20
+   DSW2)
+   int f0/3
+   switchport trunk allowed vlan 10,20
+   ASW1)
+   int range f0/2-3
+   switchport trunk allowed vlan 10,20
+
+   DSW1)
+   int f0/3
+   switchport trunk allowed vlan 30,40
+   DSW2)
+   int f0/4
+   switchport trunk allowed vlan 30,40
+   ASW2)
+   int range f0/3-4
+   switchport trunk allowed vlan 30,40
+
+
+5. ASW의 VLAN에 포트할당
+
+   ASW1 : VLAN10 (f0/1-10)  : 192.168.10.0/24
+          VLAN20 (f0/11-20) : 192.168.20.0/24 
+ 
+          int range f0/1,f0/4-10
+          switchport mode access
+          switchport access vlan 10
+
+   ASW2 : VLAN30 (f0/1-10)  : 192.168.30.0/24
+          VLAN40 (f0/11-20) : 192.168.40.0/24
+    
+
+   GW : .254
+
+   ASW1)  
+   int ran f0/2-3
+   switchport mode trunk
+   ASW2)
+   int ran f0/3-4
+   switchport mode trunk
+
+
+   DSW1)
+   int ran f0/1-3
+   switchport mode trunk
+   DSW2)
+   int ran f0/1,f0/3-4
+   switchport mode trunk
+   
+6. VLAN간 라우팅을 위해 SVI생성
+
+   DSW1)
+   int vlan 10
+   ip add 192.168.10.254 255.255.255.0
+   no sh
+   int vlan 20
+   ip add 192.168.20.254 255.255.255.0
+   no sh
+   int vlan 30
+   ip add 192.168.30.253 255.255.255.0
+   no sh
+   int vlan 40 
+   ip add 192.168.40.253 255.255.255.0
+   no sh
+
+   ip routing
+   DSW2)
+   int vlan 10
+   ip add 192.168.10.253 255.255.255.0
+   no sh
+   int vlan 20
+   ip add 192.168.20.253 255.255.255.0
+   no sh
+   int vlan 30
+   ip add 192.168.30.254 255.255.255.0
+   no sh
+   int vlan 40 
+   ip add 192.168.40.254 255.255.255.0
+   no sh
+
+   ip routing
+
+ DSW1)  int f0/1-3
+        switchport mode dynamic desirable
+
+ ASW1)   int f0/2-3
+         switchport mode dynamic auto   
+         switchport mode trunk
+
+DSW1)
+access-list 100 deny tcp 192.168.10.0 0.0.0.255 host 192.168.20.100 eq 80
+access-list 100 deny icmp 192.168.10.0 0.0.0.255 host 192.168.20.100 
+access-list 100 permit ip any any
+
+no access-list 100
+
+int vlan 10
+ip access-group 100 in
+
+
+- Etherchannel 구성
+
+1) L2 이더채널
+   
+   DSW3)
+   int range g1/0/1-2
+   channel-group 1 mode on
+
+   DSW4)
+   int range g1/0/1-2
+   channel-group 1 mode on
+   
+2) L3 이더채널
+   no switchport => L2스위치포트를 L3스위치포트로 변경
+
+   DSW3)
+   int range g1/0/23-24
+   no switchport 
+   channel-group 2 mode on
+
+   DSW5)
+   int range g1/0/23-24
+   no switchport 
+   channel-group 2 mode on
+
+
+3) 이더채널 구성후 채널에 이상으로 삭제하고 다시 이더채널을
+   구성하고자 할 때
+
+   port-channel 인터페이스를 삭제한다.
+
+   no int port-channel 1
+
+   port-channel 인터페이스를 삭제하면 해당 물리인터페이스의
+   이더채널 설정이 삭제되고, 다운상태가 된다.
+   이제 물리인터페이스로 들어가서 이더채널 구성후 
+   인터페이스를  활성화(no shut)하면 된다.
+
+
+DSW4)
+   int range g1/0/19-20
+   channel-group 3 mode desirable
+
+
+ASW3)
+   int range f0/19-20
+   channel-group 3 mode auto
+
+   int range f0/11-12
+   channel-protocol lacp
+   channel-group 4 mode passive
+
+DSW5)
+
+   int range g1/0/11-12
+   channel-protocol lacp
+   channel-group 4 mode active
