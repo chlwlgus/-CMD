@@ -1,0 +1,68 @@
+R1)
+
+enable
+conf t
+ip route 200.1.15.0 255.255.255.128 s0/0/0
+ip route 200.1.15.128 255.255.255.192 s0/0/0
+
+int f0/1
+ip add 192.168.2.1 255.255.254.0
+no sh
+exit
+
+
+R2)
+enable
+conf t
+ip route 200.1.12.0 255.255.254.0 s0/0/1
+ip route 200.1.14.0 255.255.255.0 s0/0/1
+
+
+SW1)
+
+-텔넷 접속 설정
+동시 접속수 3
+패스워드 cisco123
+enable 패스워드 cisco
+
+enable
+conf t
+hostname SW1
+int vlan 1
+ip address 192.168.1.253 255.255.255.0
+no sh
+exit
+line vty 0 2
+password cisco123
+enable password cisco
+exit
+ip default-gateway 192.168.1.254
+
+
+SW2)
+
+enable
+conf t
+hostname SW2
+int vlan 1
+ip address 192.168.1.253 255.255.255.0
+no sh
+exit
+password cisco123
+enable password cisco
+exit
+ip default-gateway 192.168.2.1
+
+
+PC0)
+
+IPv4 Address 192.168.1.1
+Subnet Mask 255.255.255.0
+Default Gateway 192.168.1.254
+
+
+PC1)
+
+IPv4 Address 192.168.2.200
+Subnet Mask 255.255.255.0
+Default Gateway 192.168.2.1
