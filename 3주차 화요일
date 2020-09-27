@@ -1,0 +1,83 @@
+S1)
+
+en
+conf t
+spanning-tree mode pvst
+spanning-tree extend system-id
+
+vlan 10
+name students
+int vlan 10
+exit
+
+vlan 20
+name faculty
+int vlan 20
+exit
+
+vlan 30
+name administration
+int vlan 30
+exit
+
+vlan 88
+name managem
+int vlan 88
+exit
+
+vlan 99
+name native
+int vlan 99
+exit
+
+int f0/1
+switchport trunk allowed vlan 10
+exit
+
+int ran f0/1-8
+switchport access vlan 10
+switchport mode access
+
+int ran f0/9-16
+switchport access vlan 20
+switchport mode access
+
+int ran f0/17-23
+switchport access vlan 30
+switchport mode access
+
+int f0/24
+switchport access vlan 88
+switchport mode access
+
+int g0/1
+switchport trunk native vlan 99
+switchport trunk allowed vlan 10,20,30,88,99
+switchport mode trunk
+
+int g0/2
+switchport trunk native vlan 99
+switchport mode trunk
+sh
+
+int Vlan10
+mac-address 0040.0bbb.9a01
+no ip address
+
+interface Vlan20
+mac-address 0040.0bbb.9a02
+no ip address
+
+interface Vlan30
+mac-address 0040.0bbb.9a03
+no ip address
+
+interface Vlan88
+mac-address 0040.0bbb.9a04
+ip address 192.168.88.254 255.255.255.0
+
+S2)
+en
+conf t
+int g0/2
+sh
