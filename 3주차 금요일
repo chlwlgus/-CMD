@@ -1,0 +1,46 @@
+1. Etherchannel 설정
+
+DSW1,2)
+int range f0/1-2
+channel-group 1 mode on
+
+int range f0/3-4
+channel-group 2 mode desirable
+
+int range f0/5-6
+channel-protocol lacp
+channel-group 3 mode active
+
+ASW1,2)
+int range f0/1-2
+channel-group 2 mode auto
+
+int range f0/3-4
+channel-protocol lacp
+channel-group 3 mode passive
+
+2. Trunk 설정
+
+DSW1,2)
+int po1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+int po2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+int po3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+ASW1,2)
+int po2
+switchport mode trunk
+
+int po3
+switchport mode trunk
+
+3. VLAN 생성
+
+모든 스위치에 접속하여 Vlan10, 20, 30을 생성한다.
