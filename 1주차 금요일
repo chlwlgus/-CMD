@@ -1,0 +1,88 @@
+R1)
+
+no
+en
+conf t
+
+int f0/0
+ip address 100.1.1.62 255.255.255.192
+no sh
+exit
+
+int f0/1
+ip add 100.1.1.126 255.255.255.192
+no sh
+exit 
+
+conf t
+int s0/0/0
+ip address 100.1.1.129 255.255.255.192
+no sh
+exit
+ip route 100.1.1.192 255.255.255.192 Serial0/0/0 
+
+
+R2)
+
+no
+en
+conf t
+int f0/0
+ip add 100.1.1.222 255.255.255.224
+no sh
+exit
+
+int f0/1
+ip add 100.1.1.254 255.255.255.224
+no sh
+exit
+
+int s0/0/1
+ip add 100.1.1.190 255.255.255.192
+no sh
+exit
+
+ip route 100.1.1.0 255.255.255.192 Serial0/0/1 
+ip route 100.1.1.64 255.255.255.192 Serial0/0/1 
+
+
+PC0)
+
+IPv4 Address 100.1.1.1
+Subnet Mask 255.0.0.0
+Default Gateway 100.1.1.62
+
+
+PC1)
+
+IPv4 Address 100.1.1.2
+Subnet Mask 255.0.0.0
+Default Gateway 100.1.1.62
+
+
+PC2)
+
+IPv4 Address 100.1.1.65
+Subnet Mask 255.0.0.0
+Default Gateway 100.1.1.126
+
+
+PC3)
+
+IPv4 Address 100.1.1.193
+Subnet Mask 255.0.0.0
+Default Gateway 100.1.1.222
+
+
+PC4)
+
+IPv4 Address 100.1.1.194
+Subnet Mask 255.0.0.0
+Default Gateway 100.1.1.222
+
+
+PC5)
+
+IPv4 Address 100.1.1.225
+Subnet Mask 255.0.0.0
+Default Gateway 100.1.1.254
