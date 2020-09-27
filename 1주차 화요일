@@ -1,0 +1,47 @@
+R1)
+en
+conf t
+int f0/0
+ip add 192.168.2.1 255.255.255.0
+no sh
+exit
+
+int s0/0/0
+ip add 2.2.12.1 255.255.255.0
+no sh
+exit
+
+ip route 172.16.3.0 255.255.255.0 s0/0/0 
+ip route 192.168.0.0 255.255.255.0 192.168.2.100 
+
+
+R2)
+en
+conf t
+int f0/0
+ip add 172.16.3.1 255.255.255.0
+no sh
+exit
+
+int s0/0/1
+ip add 2.2.12.2 255.255.255.0
+no sh
+exit
+
+ip route 192.168.2.0 255.255.255.0 Serial0/0/1 
+
+
+Smart Phone 설정)
+DHCP설정을 하여 자동으로 ip 할당 받기
+
+
+PC0설정)
+IPv4 Address 192.168.0.10
+Subnet Mask 255.255.255.0
+Default Gateway 192.168.0.1
+
+
+Servre설정)
+IPv4 Address 172.16.3.100
+Subnet Mask 255.255.255.0
+Default Gateway 172.16.3.1
