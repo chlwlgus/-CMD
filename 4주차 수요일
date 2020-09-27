@@ -1,0 +1,159 @@
+R1)
+en
+conf t
+int loopback0
+ip add 172.31.16.1 255.255.255.0
+exit
+int loopback1
+ip add 172.31.17.1 255.255.255.0
+exit
+int loopback2
+ip add 172.31.18.1 255.255.255.0
+exit
+int loopback3
+ip add 172.31.19.1 255.255.255.0
+exit
+router rip
+network 172.31.0.0
+no auto-summary
+---------------------------------------------
+R1,2,3,4,5)
+en
+conf t
+no router rip
+
+sh run
+no ip route 172.------- 쇼런해서 나온거 c하나 남기고 다 삭제
+
+R1)
+router eigrp 100
+network 192.168.1.0
+network 192.168.12.0
+R2)
+router eigrp 100
+network 192.168.12.0
+network 192.168.23.0
+R3)
+router eigrp 100
+network 192.168.23.0
+network 192.168.34.0
+network 192.168.35.0
+R4)
+router eigrp 100
+network 192.168.34.0
+network 172.16.2.0 
+R5)
+router eigrp 100
+network 192.168.35.0
+
+R5번에서 auto-summary비활성화 하고
+loopback 네트워크 광고
+manual summary
+
+R5)
+router eigrp 100
+network 172.16.0.0
+no auto-summary
+
+int s0/2/1
+ip summary-address eigrp 100 172.16.4.0 255.255.252.0
+
+##router eigrp 100
+network 172.16.5.0 255.255.255.0
+network 172.16.5.0 0.0.0.255
+network 172.16.5.5 0.0.0.0 이 세가지 다 같은 표현
+
+R4)
+int s0/2/1
+no ip summary-address eigrp 100 172.16.0.0 255.255.252.0
+
+R5)
+router eigrp 100
+network 0.0.0.0
+no network 172.16.0.0
+no network 192.168.35.0
+exit
+int s0/2/1
+no ip summary-address eigrp 100 172.16.4.0 255.255.252.0
+
+R4)
+en
+conf t
+int s0/2/0
+ip add 192.168.34.4
+no sh
+exit
+router eigrp 100
+network 192.168.45.0
+R5)
+en
+conf t
+int s0/2/0
+ip add 192.168.34.5
+no sh
+라우터 5번에는 아까 network 0.0.0.0으로 전체 네트워크로 설정했으므로 추가설정 안해도 된다.
+-----------------------------------------------------------------
+R5 - SW1연결
+R5)
+en
+conf t
+int f0/1
+ip add 172.16.2.5 255.255.255.0
+
+R3)
+en
+sh ip eigrp to
+두줄씩 뜸
+------------------------
+R5)
+en
+conf t
+int f0/1
+bandwidth 1000
+
+R3)
+en
+sh ip eigrp to
+이렇게하면 위에 두줄씩 떴던게 1줄만 나옴
+
+R5)
+en
+conf t
+int f0/1
+bandwidth 50000
+
+R3)
+en
+sh ip eigrp to
+이러면 또 2줄 bnadwidth로 범위를 조절하여 2줄로나옴
+
+라우터1과 오른쪽 위에 라우터 3이랑 연결
+R1)
+en
+conf t
+int s0/2/1
+ip add 2.2.12.1 255.255.255.0
+no sh
+
+오른쪽 위 R3)
+en
+conf t
+int s0/0/0
+ip add 2.2.12.2 255.255.255.0
+no sh
+exit
+
+router rip
+version 2
+network 100.0.0.0
+network 150.1.0.0
+exit
+
+router eigrp 100
+network 2.0.0.0
+
+오른쪽 R4)
+router rip
+version 2
+network 100.0.0.0
+network 150.1.0.0
