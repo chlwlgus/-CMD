@@ -1,0 +1,65 @@
+R1)
+en
+conf t
+int f0/0
+ip add 192.168.1.254 255.255.255.0
+no sh
+int f0/1
+ip add 192.168.2.254 255.255.255.0
+no sh
+ip dhcp pool lan1
+network 192.168.1.0 255.255.255.0
+default-router 192.168.1.254
+dns-server 192.168.5.100
+exit
+(101~200까지는 자동할당 하려면)
+ip dhcp excluded-address 192.168.1.1 192.168.1.100
+ip dhcp excluded-address 192.168.1.201 192.168.1.254
+
+ip dhcp pool lan2
+network 192.168.2.0 255.255.255.0
+default-router 192.168.2.254
+dns-server 192.168.5.100
+exit
+(1~100까지만 자동할당)
+ip dhcp excluded-address 192.168.1.101 192.168.1.254
+
+do wr
+후 전원 끄고 hwic-2t 연결
+int s0/0/0
+ip add 10.1.12.1 255.255.255.252
+no sh
+디폴트 라우트 설정
+ip route 0.0.0.0 0.0.0.0 [출구인터페이스|Nexthop주소]
+ip route 0.0.0.0 0.0.0.0 Serial0/0/0 
+
+R2)
+en
+conf t
+int s0/0/1
+ip add 10.1.12.2 255.255.255.252
+no sh
+int f0/0
+ip add 192.168.5.254 255.255.255.0
+no sh
+int f0/1
+ip add 192.168.7.254 255.255.255.0
+no sh
+스태틱 라우트 설정
+ip route 목적지 네트워크 서브넷마스크[출구인터페이스|Nexthop주소]
+ip route 192.168.1.0 255.255.255.0 s0/0/1
+ip route 192.168.2.0 255.255.255.0 s0/0/1
+
+R1)
+en
+conf t
+int f1/0
+ip add 192.168.3.254 255.255.255.0
+no sh
+exit
+int f1/0
+ip helper-address 192.168.5.100
+
+R2)
+pc2 출발지 192.168.3.254
+ip route 192.168.3.0 255.255.255.0 10.1.12.1
