@@ -1,0 +1,89 @@
+R1)
+en
+conf t
+host R1
+int f0/0
+ip add 172.16.10.1 255.255.255.0
+no sh
+
+int f0/1
+ip add 172.16.11.1 255.255.255.0
+no sh
+
+int s0/0/0
+ip add 172.16.0.1 255.255.255.252
+no sh
+
+router rip
+version 2
+network 172.16.0.0
+no auto-summary
+
+
+ip dhcp pool R1_LAN10
+network 172.16.10.0 255.255.255.0
+default-router 172.16.10.1
+dns-server 172.16.20.254
+
+ip dhcp excluded-address 172.16.10.1 172.16.10.3
+
+ip dhcp pool R1_LAN11
+network 172.16.11.0 255.255.255.0
+default-router 172.16.11.1
+dns-server 172.16.20.254
+
+ip dhcp excluded-address 172.16.11.1 172.16.11.3
+
+R2)
+en
+conf t
+host R2
+int f0/0
+ip add 172.16.20.1 255.255.255.0
+no sh
+
+int s0/0/0
+ip add 172.16.0.2 255.255.255.252
+no sh
+
+int s0/0/1
+ip add 209.165.201.1 255.255.255.252
+no sh
+exit
+
+ip route 0.0.0.0 0.0.0.0 209.165.201.2
+
+router rip
+version 2
+network 172.16.0.0
+no auto-summary
+default-information originate
+exit
+
+ip access-list standard NAT_ACL
+permit 172.16.10.0 0.0.0.255
+permit 172.16.11.0 0.0.0.255
+
+ip nat pool NAT_POOL 209.165.201.9 209.165.201.14 netmask 255.255.255.248
+
+ip nat inside source list NAT_ACL pool NAT_POOL overload
+
+ip nat inside source static 172.16.20.254 209.165.201.30
+
+int s0/0/1
+ip nat outside
+
+int f0/0
+ip nat inside
+
+int s0/0/0
+ip nat inside
+
+ISP)
+en
+conf t
+host ISP
+int s0/0/1
+ip add 209.165.201.2 255.255.255.252
+
+ip route 209.165.201.0 255.255.224.224 s0/0/1
