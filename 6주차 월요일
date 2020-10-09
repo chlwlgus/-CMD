@@ -1,0 +1,106 @@
+R1)
+int f0/0
+ip add 192.168.0.1 255.255.255.0
+no sh
+
+int f0/1
+ip add 10.1.0.1 255.255.255.252
+no sh
+
+int s0/0/0
+ip add 10.1.0.9 255.255.255.252
+no sh
+
+router ospf 1
+net 192.168.0.1 0.0.0.0 a 0
+net 10.1.0.1 0.0.0.0 a 0
+net 10.1.0.9 0.0.0.0 a 0
+
+----신규----
+INT F0/0
+standby 10 ip 192.168.0.254
+standby 10 priority 120             이거하고 pc게이트웨이를 .254로변경
+standby 10 preempt
+------------
+
+R2)
+int f0/0
+ip add 192.168.0.2 255.255.255.0
+no sh
+
+int f0/1
+ip add 10.1.0.5 255.255.255.252
+no sh
+
+int s0/0/0
+ip add 10.1.0.10 255.255.255.252
+no sh
+
+router ospf 1
+net 192.168.0.2 0.0.0.0 a 0
+net 10.1.0.5 0.0.0.0 a 0
+net 10.1.0.10 0.0.0.0 a 0
+
+---신규---
+int f0/0
+standby 10 ip 192.168.0.254     이거하고 pc게이트웨이를 .254로변경 이러고 pc에서 ping -t 100.100.100.100을 하게 되면 핑이 멈추지 않고 계속 간다.
+---------
+
+
+R3)
+int f0/0
+ip add 10.1.0.2 255.255.255.252
+no sh
+
+int f0/1
+ip add 10.1.0.6 255.255.255.252
+no sh
+
+int loopback 0
+ip add 100.100.100.100 255.255.255.0
+no sh
+
+router ospf 1
+net 100.100.100.100 0.0.0.0 a 0
+net 10.1.0.2 0.0.0.0 a 0
+net 10.1.0.6 0.0.0.0 a 0
+default-information originate
+
+ip route 0.0.0.0 0.0.0.0 lo0
+
+group 20 설정
+가상 ip 주소 : .253
+Active : R2 110
+pc1 gateway .254
+pc2 gateway .253 으로 변경
+
+
+R1)
+int f0/0
+standby 20 ip 192.168.0.253
+
+R2)
+int f0/0
+standby 20 ip 192.168.0.253
+standby 20 priority 110
+standby 20 preempt
+shutdown
+하면 통신이 끊겼다가 R1의 standby가 active로 변경되면서 다시 통신외 된다.
+
+do sh standby brief
+하면 active, standby 관련 정보를 볼 수 있다.
+
+standby 변경법
+R1)
+int f0/0
+standby 10 priority 105
+do sh standby brief
+
+R1, R2시리얼 연결 끊고
+R1 f0/1 연결 끊기 shundown
+
+standby 10 track f0/1     그룹 10번에서 f0/1의 연결을 감시하다가 끊어지면 우선순위를 임의로 낮춘다.
+
+R2)
+int f0/0
+standby 10 preempt
