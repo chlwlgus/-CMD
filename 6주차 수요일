@@ -1,0 +1,206 @@
+R3)
+int s1/2
+delay 1000
+
+R4)
+int s1/0
+delay 1000
+
+R1)
+do sh ip eig to
+router eigrp 200
+variance 2
+do sh ip ro ei
+do sh ip 10.1.25.0
+
+R6)
+150.1.16.0/24
+150.1.17.0/24
+150.1.18.0/24
+150.1.19.0/24 재분배 하기
+sh run | sre
+router eigrp 300
+redistribute static (static재분배는 metric을 넣지 않아도 된다.)
+
+
+150.1.16.0~150.1.19.0 네트워크를 Manual Summary
+int f0/0
+ip summary-address eigrp 300 150.1.16.0 255.255.252.0
+
+router eigrp 300
+auto-summary
+
+do sh ip ro 했을때 뒤에 null0 가 나오면 폐기처분이다
+==auto-summary는 b클래스로 광고
+==manual-summary는 c클래스로 광고
+
+
+R2)
+ip authentication mode eigrp 200 md5
+ip authentication key-chain eigrp 200 R2R1
+
+router eigrp 200
+redistribute static route-map default
+network 10.0.0.0
+
+R1)
+router eigrp 200
+net 10.1.0.0 0.0.255.255
+net 172.16.5.0 0.0.0.255
+net 192.168.0.0 0.0.255.255
+
+R5)
+router eigrp 300
+172.16.5.0 0.0.0.255
+
+
+gns3 vm > edit > virtual network editor > change sttings>2~7까지 만들기
+
+cloud를 꺼내고 마우스 오른쪽키 > configure > network 2 apply ok
+R1)
+int f0/1
+ip add 192.168.20.250 255.255.255.0
+no sh
+
+cmd)
+ipconfig
+ping 192.168.20.250
+
+R2)
+int f0/0
+ip add dhcp
+
+R6)
+router eigrp 300
+no redistribute static
+
+R2)
+int f0/0
+ip add 192.168.102.32 255.255.252.0
+no sh
+
+ip route 0.0.0.0 0.0.0.0 f0/0 192.168.0.1
+            디폴트 주소  출구 네트워크
+이걸 하면 
+do ping 1.1.1.1로 외부로 통신이 가능
+
+cmd관리자 권한
+route add 10.1.12.0 mask 255.255.255.0 192.168.20.250
+
+R2)
+end
+debug ip icmp
+
+R1)
+router eigrp 200
+network 192.168.20.0
+
+cmd)
+ping 10.1.12.2
+
+ping 172.16.5.6하면 핑이 가도록 설정하기
+R2)
+int s1/0
+ip add 10.1.12.2 255.255.255.0
+no sh
+int s1/1
+ip add 10.1.25.2 255.255.255.0
+no sh
+
+
+KYT에 ssh 설정
+domain : gdn9,com
+key : 1024
+user / pw : admin /cisco
+원격접속은 ssh만
+
+KYT)
+int g0/0
+ip add 172.16.5.7 255.255.255.0
+no sh
+
+router eigrp 300
+network 172.16.5.0 0.0.0.255
+
+
+ip domain-name gdn9.com
+crypto key generate rsa general-keys modulus 1024
+username admin password cisco
+line vty 0 4
+transport input ssh
+passward cisco
+login local
+exit
+enable password cisco
+
+
+
+ip http server
+enable password cisco
+
+웹브라우저 > 172.16.5.7 비밀번호만 cisco입력
+
+R3)
+firefox달기
+
+R2)
+ip nat inside source static 172.16.3.3 int f0/0
+
+int f0/0
+ip nat inside
+ip nat outside
+
+int s1/2
+ip nat inside
+
+파이어폭스 때고 이더넷 스위치 추가한다음 KYT때고 이더넷 스위치에 연결
+
+KYT)
+int g0/0
+ip add 172.16.3.33 255.255.255.0
+router eigrp 200
+net 172.16.3.0 255.255.255.0
+no router eigrp 300
+
+R2)
+do clear ip nat translation *
+no ip nat inside source static 172.16.3.3 int f0/0
+ip nat inside source static 172.16.3.33 int f0/0
+
+int f0/0
+ip nat outside
+
+R2)
+sh ip nat traslation
+
+Cmd)
+ping 192.168.103.33
+
+R2)
+sh ip nat traslation
+icmp가 나옴
+no debug ip icmp
+
+cmd)
+ping 192.168.103.33
+
+R2)
+sh ip nat translations 하면 icmp가 생김
+
+no ip nat inside source static 172.16.3.33 interface FastEthernet0/0
+ip nat inside source static tcp 172.16.3.33 22 int f0/0 22
+clear ip nat translation *
+no ip nat inside source static tcp 172.16.3.33 22 int f0/0 22
+ip nat inside source static tcp 172.16.3.33 22 int f0/0 2222
+
+cmd)
+ssh admin@192.168.102.31 -p 2222
+
+윈도우 웹 브라우저에서 192.168.102.33 입력하면 R7의 웹페이지가 열리도록 설정
+
+ip http server
+
+ip nat inside source static tcp 172.16.3.33 80 int f0/0 80
+clear ip nat translation *
+ip nat inside source static tcp 2.2.57.7 80 int f0/0 80
+ip http server
