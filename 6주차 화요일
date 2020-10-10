@@ -1,0 +1,91 @@
+실습1
+
+R1)
+ospf > process id 1 > passive interface > g0/0연결
+router ospf 1
+no passive interface g0/0
+
+
+R3)
+ospf > process id 1 > networks > router 1 연결
+
+conf t
+router ospf 1
+no network 172.16.1.64 0.0.0.31 area 0
+network 172.16.1.64 0.0.0.31 area 2
+exit
+no router ospf 1
+router ospf 1
+router-id 3.3.3.3
+network 172.16.1.32 0.0.0.31 area 2
+network 172.16.1.64 0.0.0.31 area 2
+--------------------------------------------------------------
+ 실습 2 
+
+
+              172.31.30.0/23
+분홍 1000 172.31.25.254/23
+              172.31.27.254/23
+하늘 500   172.31.28.254/24
+              172.31.29.254/24
+보라 240   172.31.30.125/25  255.255.255.128
+              172.31.30.254/25 255.255.255.128
+노랑 4      172.31.31.249/30
+              172.31.31.250/30
+              172.31.31.253/30
+              172.31.31.254/30
+
+R1)
+
+router ospf 1
+router-id 1.1.1.1
+passive-interface g0/0
+passive-interface g0/1
+network 172.31.31.252 0.0.0.3 area 0
+network 172.31.25.0 0.0.3.255 area 10
+network 172.31.31.248 0.0.0.7 area 0
+area 0 authentication message-digest
+default-information originate
+
+int s0/0/0
+ip ospf message-digest-key 1 md5 cisco123
+int s0/0/1
+ip ospf message-digest-key 1 md5 cisco123
+
+ip route 0.0.0.0 0.0.0.0 s0/1/0
+
+R2)
+
+router ospf 1
+router-id 2.2.2.2
+passive-interface g0/0
+passive-interface g0/1
+network 172.31.28.0 0.0.0.255 area 20
+network 172.31.31.248 0.0.0.7 area 0
+area 0 authentication message-digest
+default-information originate
+exit
+
+int s0/0/0
+ip ospf message-digest-key 1 md5 cisco123
+
+
+R3)
+int g0/0
+ip add 172.31.30.126 255.255.255.128
+no sh
+
+int g0/1
+ip add 172.31.30.126 255.255.255.128
+no sh
+
+router ospf 1
+router-id 3.3.3.3
+passive-interface g0/0
+passive-interface g0/1
+network 172.31.31.252 0.0.0.3 area 0
+network 172.31.30.0 0.0.0.255 area 30
+area 0 authentication message-digest
+
+int s0/0/1
+ip ospf message-digest-key 1 md5 cisco123
