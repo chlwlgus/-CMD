@@ -1,0 +1,192 @@
+SW1)
+
+en
+conf t
+int range g1/0-3,g2/0-3,g3/0-3
+shut
+
+vlan 2
+int vlan 2
+exit
+
+vlan 10
+int vlan 10
+exit
+
+int ran g0/2-3
+switchport mode access
+switchport access vlan 10
+
+
+int range po1
+switchport mode access
+switchport access vlan 2
+
+int range g0/0-1
+channel-protocol lacp
+channel-group 1 mode active
+
+int po1
+switchport mode access
+switchport access vlan 2
+
+int vlan 10
+ip add 192.168.1.254 255.255.255.0
+ip helper-address 192.168.3.100
+ip helper-address 192.168.3.200
+no sh
+
+int vlan 2
+ip add 192.168.2.1 255.255.255.0
+no sh
+
+ip route 192.168.3.0 255.255.255.0 vlan 2 192.168.2.2
+
+SW2)
+
+en
+conf t
+int range g1/0-3,g2/0-3,g3/0-3
+shut
+
+int range g0/0-1
+channel-protocol lacp
+channel-group 1 mode passive
+
+int po1
+switchport mode access
+switchport access vlan 2
+
+vlan 2
+vlan 3
+
+int range po1
+switchport mode access
+switchport access vlan 2
+
+int range g0/2-3
+switchport mode access
+switchport access vlan 3
+
+int vlan 2
+ip add 192.168.2.2 255.255.255.0
+no sh
+
+int vlan 3
+ip add 192.168.3.254 255.255.255.0
+no sh
+
+ip route 192.168.1.0 255.255.255.0 vlan 2 192.168.2.1
+
+
+DHCP_SVR1)
+
+conf t
+no ip routing
+ip default-gateway 192.168.3.254
+
+int f0/0
+ip add 192.168.3.100 255.255.255.0
+no sh
+
+ip dhcp pool LAN1
+network 192.168.1.0 255.255.255.0
+default-router 192.168.1.254
+
+ip dhcp excluded-address 192.168.1.51 192.168.1.254
+
+DHCP_SVR2)
+conf t
+no ip routing
+ip default-gateway 192.168.3.254
+
+int f0/0
+ip add 192.168.3.200 255.255.255.0
+no sh
+
+ip dhcp pool LAN1
+network 192.168.1.0 255.255.255.0
+default-router 192.168.1.254
+
+ip dhcp excluded-address 192.168.1.1 192.168.1.100
+ip dhcp excluded-address 192.168.1.151 192.168.1.254
+
+
+
+SW1)
+ip dhcp snooping
+ip dhcp snooping vlan 10
+no ip dhcp snooping information option
+
+pc1)
+ip dhcp (이렇게 하면 주소가 바뀐다.)
+
+SW1)
+sh ip dhcp snooping binding 
+int g1/0
+switchport mode access
+switchport access vlan 10
+
+R1)생성
+
+SW1)
+conf t
+no ip dhcp snooping
+
+int g1/0
+no sh
+
+int f0/0
+ip add 192.168.1.100 255.255.255.0
+no sh
+
+
+R1)
+conf t
+no ip routing
+ip default-gateway 192.168.1.254
+ip dhcp pool Hack
+network 192.168.1.0 255.255.255.0
+default-router 192.168.1.253
+exit
+ip dhcp excluded-address 192.168.1.1 192.168.1.150
+ip dhcp excluded-address 192.168.1.161 192.168.1.254
+
+int f0/0
+no sh
+
+SW1)
+int g1/0
+no sh
+
+ip dhcp snooping
+ip dhcp snooping vlan 10
+no ip dhcp snooping information option
+int po1  => DHCP 서버가 있는 쪽 포트
+ip dhcp snooping trust
+
+
+R1)
+int f0/0
+mac-address 0000.0000.0001
+do ping 192.168.3.100
+을 하면 SW1에서 차단한며 명령들이 올라온다.
+
+
+SW1)
+arp access-list SW1
+permit ip host 192.168.1.50 mac host 0000.0000.0050
+ip arp inspection filter SW1 vlan 10
+
+
+R1)
+ip add 192.168.1.50 255.255.255.0
+mac-address 0000.0000.0050
+exit
+
+SW1)
+int g0/2
+ip verify source
+
+int g0/3
+ip verify source
