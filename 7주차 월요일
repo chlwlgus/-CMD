@@ -1,1 +1,51 @@
+R1)
 
+en
+conf t
+
+
+int g0/0
+ip address 192.168.1.254 255.255.255.0
+ip access-group Permit_Remote_Traffic in
+no sh
+
+int g0/1
+ip address 172.16.2.254 255.255.255.0
+ip access-group 1 out
+no sh
+
+ip access-list standard Deny_host1
+deny host 192.168.1.1
+permit any
+
+ip access-list standard Deny_telnet_host2
+deny host 192.168.1.2
+permit any
+exit
+
+ip access-list extended Permit_http_host2
+permit tcp host 192.168.1.2 host 172.16.2.4 eq www
+permit icmp host 192.168.1.2 host 172.16.2.4 echo
+deny ip host 192.168.1.2 host 172.16.2.4
+permit ip any any
+exit
+
+
+ip access-list extended Dany_outside_traffic
+permit tcp host 172.16.2.4 eq telnet 192.168.1.0 0.0.0.255
+permit tcp host 172.16.2.4 eq ftp 192.168.1.0 0.0.0.255
+deny ip any any
+permit icmp host 172.16.2.4 192.168.1.0 0.0.0.255
+exit
+
+ip access-list extended Permit_Remote_Traffic
+permit tcp 192.168.1.0 0.0.0.255 host 172.16.2.3 eq telnet
+permit tcp 192.168.1.0 0.0.0.255 host 172.16.2.4 eq ftp
+deny ip any any
+permit icmp 192.168.1.0 0.0.0.255 host 172.16.2.4 echo
+exit
+
+line vty 0 4
+access-class Deny_telnet_host2 in
+password cisco
+login
