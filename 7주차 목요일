@@ -1,0 +1,84 @@
+R1)
+conf t
+int f0/0
+ip nat outside
+ip add 192.168.102.32 255.255.252.0
+no sh
+
+int f1/0.30
+ip nat inside
+encapsulation dot1q 30
+ip add 192.168.30.253 255.255.255.0
+
+int f1/0
+no sh
+
+access-list 30 permit 192.168.30.0 0.0.0.255
+ip nat inside source list 30 int f0/0
+
+ip route 0.0.0.0 0.0.0.0 f0/0 192.168.100.1
+
+SW1)
+en
+conf t
+host SW1
+line console 0
+exec-timeout 0
+logging synchronous
+
+vlan 30
+
+int range g0/0, g3/0
+switchport mode access
+switchport access vlan 30
+
+int g3/3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+SPAN)
+monitor session 1 source int g0/0
+monitor session 1 destination int g3/0
+
+
+> do sh int status
+> do sh ip int b
+
+
+monitor session 1 source int g0/0 
+no monitor session 1
+do sh monitor session 1
+
+monitor session 2 source vlan 30
+no monitor session 2 source vlan 30
+monitor session 2 source vlan 30 tx
+monitor session 2 destination int g3/0
+
+SW2)
+vlan 30
+int vlan 30
+no sh
+
+int g1/1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+int g0/0
+switchport access vlan 30
+switchport trunk encapsulation dot1q
+switchport mode access
+
+
+- 원격스위치 설정(SW2)
+vlan 500
+remote-span
+monitor session 1 source remote vlan 500
+monitor session 1 destination int g3/3
+
+- 로컬스위치 설정(SW1)
+vlan 500
+remote-span
+monitor session 2 source int g3/3
+monitor session 2 destination remote vlan 500
+
+sh monitor session
