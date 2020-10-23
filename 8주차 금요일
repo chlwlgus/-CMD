@@ -1,0 +1,254 @@
+ASA1과 R3 사이에 stie to site ipsec설정
+net 172.16.30.0/24 <-> 192.168.3.0/24
+
+1단계 : encrption 3des
+         authentication pre-share
+         hash md5
+         group 2
+
+         pre-shared-key : cisco123
+
+2단계 : transform-set(aaa-r3-ts) esp, encryption aes, hash sha
+보호트래픽 : asa-r3-traffic
+        172.16.30.0/24 <-> 192.168.3.0/24
+
+R7,R3) int 터널일 경우
+int tun 3
+no tunnel protection          => crypto map r3vpn 20 ipsec-isakmp
+
+int s2/1 crypto map을 사용한 경우
+crypto map r3-vpn
+
+
+
+R7)
+en
+conf t
+
+int tun 1
+no tunnel protection ipsec profile gre_profile
+
+R3)
+en
+conf t
+
+int tun 3
+no tunnel protection ipsec profile gre_profile
+
+---------------
+ASA1)
+--1단계
+crypto ikev1 policy 20
+authentication pre-share
+encryption 3des
+hash md5
+group 2
+
+no tunnel-group 10.1.23.3 type ipsec-l2l
+
+tunnel-group 10.1.23.2 type ipsec-l2l
+tunnel-group 10.1.23.2 ipsec-attributes
+ikev1 pre-shared-key cisco123
+
+--2단계
+crypto ipsec ikev1 transform-set asa-r3-ts esp-aes esp-sha-hmac
+--보호트래픽 지정
+access-list asa-r3-vpn-traffic permit ip 172.16.30.0 255.255.255.0 192.168.3.0 255.255.255.0
+
+crypto map asa1-vpn 20 match address asa-r3-vpn-traffic
+crypto map asa1-vpn 20 set peer 10.1.23.2
+crypto map asa1-vpn 20 set ikev1 transform-set asa-r3-ts
+
+crypto map asa1-vpn interfae outside
+crypto ikev1 enable outside
+
+
+R3)
+--1단계
+crypto isakmp policy 20
+authentication pre-share
+encryption 3des
+hash md5
+group 2
+
+crypto isakmp key cisco123 address 10.1.110.1
+--2단계
+crypto ipsec transform-set r3-asa1-ts esp-aes esp-sha-hmac
+--보호트래픽
+ip access-list extended r3-asa1-vpn-traffic
+permit ip 192.168.3.0 0.0.0.255 172.16.30.0 0.0.0.255
+
+crypto map r3-vpn 20 ipsec-isakmp 
+set peer 10.1.110.1
+set transform-set r3-asa1-ts
+match address r3-asa1-vpn-traffic
+
+int s2/1
+crypto map r3-vpn
+
+
+- NAT 제외
+
+ASA1)
+object network local_net30
+subnet 172.16.30.0 255.255.255.0
+
+object network remote_net3
+subnet 192.168.3.0 255.255.255.0
+
+nat (inside,outside) source static local_net30 local_net30 destination static remote_net3 remote_net3
+
+sh nat de
+object network lan30
+subnet 172.16.30.0 255.255.255.0
+nat (inside,outside) dynamic interface
+
+R3)
+ip access-list extended 133
+15 deny ip 192.168.3.0 0.0.0.255 172.16.30.0 0.0.0.255
+
+**핑 안간거 해결
+crypto map asa1-vpn 10 set ikev1 transform-set asa1-ts
+crypto map asa1-vpn 20 set peer 10.1.23.2 
+
+crypto map asa1-vpn 20 set ikev1 transform-set asa-r3-ts위에처럼 match address가 있어야하는데
+30.0을 3.0으로 바꾸면서 30.0 내용을 지우면서 match address 내용도 지워진것 그러므로 아래와 같이
+치면 됨
+
+crypto map asa1-vpn 20 match address asa-r3-vpn-traffic
+
+R1)
+en
+conf t
+
+int s2/0
+ip add 10.1.21.1 255.255.255.0
+no sh
+
+R3)
+en
+conf t
+
+int s2/0
+ip add 10.1.21.2 255.255.255.0
+no sh
+
+int f0/0
+ip add 10.1.23.2 255.255.255.0
+no sh
+
+PfSense1)
+1
+n
+em0
+em1
+em2
+enter
+y
+
+2
+1
+n
+10.1.12.2
+24
+10.1.12.1 게이트웨이 설정
+n
+enter
+y
+
+2
+2
+172.16.3.254
+24
+enter
+enter
+n
+
+2
+3
+192.168.20.253
+24
+enter
+enter
+n
+
+PfSense2)
+
+1   인터페이스 생성
+n
+em0
+em1
+em2
+enter
+y
+
+ip 주는것
+2
+1
+n
+10.1.23.3
+24
+10.1.23.2 게이트웨이 설정
+n
+enter
+y
+
+2
+2
+n
+172.16.3.254
+24
+enter
+enter
+n
+
+2
+3
+192.168.20.252
+24
+enter
+enter
+n
+
+R1)
+ip route 10.1.23.0 255.255.255.0 s2/0 10.1.21.2
+
+R3)
+ip route 10.1.12.0 255.255.255.0 s2/0 10.1.21.1
+ip route 0.0.0.0 0.0.0.0 s2/0 10.1.12.1
+
+icmp
+ ant
+wan address
+
+R1)
+do sh run | i ip nat
+no access-list 2
+access-list 1 permit 10.1.12.0 0.0.0.255
+access-list 1 permit 10.1.23.0 0.0.0.255
+do sh run | i ip nat
+
+int s2/0
+ip nat inside
+
+int f/0
+ip add 192.168.102.15
+no sh
+
+PC2)
+ip 192.168.2.100 192.168.2.254
+
+R2)
+ip routing
+
+int g0/1
+ip add 192.168.2.100 255.255.255.0
+no sh
+exit
+
+ip route 0.0.0.0 0.0.0.0 g0/0 172.16.2.254
+
+Pfsense) static 넣기
+
+IPSec VPN
+192.168.2.0/24 <-> 172.16.3.0/24
