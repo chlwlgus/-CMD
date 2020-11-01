@@ -1,0 +1,109 @@
+R1)
+
+conf t
+int f0/1
+ip add dhcp
+ip nat outside
+no sh
+
+int s1/0
+ip add 10.1.12.1 255.255.255.0
+ip nat inside
+no sh
+
+int f0/0
+ip add 10.1.13.1 255.255.255.0
+ip nat inside
+no sh
+
+router ospf 1
+network 10.1.12.0 0.0.0.255 area 0
+network 10.1.13.0 0.0.0.255 area 0
+
+ip nat inside source list 1 int f0/1 overload 
+access-list 1 permit 10.1.0.0 0.0.255.255
+access-list 1 permit 192.168.40.0 0.0.0.255
+
+ip route 0.0.0.0 0.0.0.0 f0/1 192.168.100.1
+
+R2)
+
+conf t
+int s1/0
+ip add 10.1.12.2 255.255.255.0
+no sh
+
+int f0/0
+ip add 192.168.40.253 255.255.255.0
+no sh
+
+router ospf 1
+network 10.1.12.0 0.0.0.255 area 0
+network 192.168.40.0 0.0.0.255 area 0
+
+ip route 0.0.0.0 0.0.0.0 s1/0 10.1.12.1
+
+
+SVR)
+
+conf t
+int f0/0
+ip add 192.168.20.100 255.255.255.0
+no sh
+
+
+
+Pfsense)
+
+인터페이스 생성
+1
+n
+em0
+em1
+enter
+y
+
+
+ip 입력
+
+em0)
+2
+1
+n
+10.1.13.3
+24
+10.1.13.1
+n
+enter
+y
+
+em1)
+2
+2
+192.168.20.253
+24
+enter
+enter
+n
+
+
+SVR)
+
+텔넷 설정 후 window7에서 텔넷 접속하기
+
+conf t
+line vty 0 4
+transport input telnet
+password cisco
+login
+
+no ip routing
+ip default-gateway 
+pfsense > firewall > rules 에서 wan 추가해줌anyany로 
+
+
+Pfsense)
+포트포워딩 10.1.13.3 23 > 192.168.20.100 23
+ACL Rule에서 192.168.20.100 23 허용 (NAT 적용 후에 ACL 적용)
+내부로 바로 접속 못하므로 
+telnet 10.1.13.3
