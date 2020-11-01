@@ -1,0 +1,209 @@
+R2)
+
+conf t
+int f0/1
+ip add 2.2.25.2 255.255.255.0
+ip nat inside
+no sh
+
+IOS)
+conf t
+no ip routing
+ip default-gateway 192.168.5.254
+
+int g0/0
+ip add 192.168.5.100 255.255.255.0
+no sh
+
+ASA)
+
+int m0/0
+nameif cloud3
+security-level 50
+ip add 192.168.20.253 255.255.255.0
+no sh
+
+int g0/0
+nameif outside
+security-level 0
+ip add 2.2.25.5 255.255.255.0
+no sh
+
+int g0/1
+nameif inside
+security-level 100
+ip add 192.168.5.254 255.255.255.0
+no sh
+
+access-list lan5 permit icmp any any
+access-group lan5 in interface outside
+
+object network LAN5
+subnet  192.168.5.0 255.255.255.0
+nat (inside,outside) dynamic interface
+
+route outside 0.0.0.0 0.0.0.0 2.2.25.2
+
+http server enable
+http 192.168.20.1 255.255.255.255 cloud3
+asdm image disk0:/asdm-7101.bin
+
+알FTP들어가서 서버 > 서버 실행 > ip 입력 192.168.20.1
+copy ftp: flash:
+192.168.20.1
+asdm-7101.bin (문서파일에서 들어가보면 파일명이 있음 그 파일명 작성)
+
+asdm들어가서 192.168.20.253으로 접속
+
+-ASA에 vpn 설정하기(외부에서 asa 방화벽 안에있는 서버와 통신하려고 vpn설정을 한 것)
+
+메뉴 wizards > vpn wizards > IPSec(IKEv1) > next > next > pre-shared key >
+tunnel Group name : asa-vpn-group / next > next(aaa서버 없으므로 그냥 next) > 
+username : admin / password : cisco /add 해주고 next > pool생성 new > 
+name : asa-vpn-pool / starting ip : 192.168.5.151 / ending ip : 192.168.5.160 /
+subnet : 255.255.255.0 <dhcp를 사용할 경우 위에 ip를 사용하려면 dhcp에서 제외시켜야한다.>
+next > primary dns : 8.8.8.8 / secondary dns : 8.8.4.4 / domain name : gdn9.com / next
+> 5.0대역이 무조건 nat가 되는것이므로 window7에서 정보를 받으려면 같은대역으로 가는것을
+제외 시키고 nat를 해야 하므로 서버의 ip 대역을 넣어준다. > 
+아래 첫번째 박스 체크를 해야 통신이 된다.(근데 이번 실습은 체크 안함)
+
+정책 send 하기전에 나온 코드 수정 후 ASA에 직접 입력
+
+  ip local pool asa-vpn-pool 192.168.5.151-192.168.5.160 mask 255.255.255.0
+      object network remote-net
+        subnet 192.168.5.128 255.255.255.192
+      object network local-net
+        subnet 192.168.5.0 255.255.255.0
+      username admin password cisco privilege 0
+      username admin attributes
+        vpn-group-policy asa-vpn-group
+      exit
+      group-policy asa-vpn-group internal
+      group-policy asa-vpn-group attributes
+        vpn-tunnel-protocol ikev1
+        dns-server value 8.8.8.8 8.8.4.4
+        default-domain value gdn9.com
+      exit
+      tunnel-group asa-vpn-group type remote-access
+      tunnel-group asa-vpn-group general-attributes
+        default-group-policy asa-vpn-group
+        address-pool  asa-vpn-pool
+      tunnel-group asa-vpn-group ipsec-attributes
+        ikev1 pre-shared-key cisco123
+
+      crypto ikev1 policy 10
+        encryption aes-256
+    
+      crypto ikev1 enable  outside
+      crypto ipsec ikev1 transform-set ts esp-3des esp-md5-hmac
+      
+      crypto dynamic-map dmap 65535 set  pfs group1
+      crypto dynamic-map dmap 65535 set  ikev1 transform-set  ts
+      crypto map outside_map 65535 ipsec-isakmp dynamic dmap
+      crypto map outside_map interface  outside
+
+      nat (inside,outside) 1 source static local-net local-net destination static remote-net remote-net
+
+이러고
+vpn client 에서 new해서 새로 만들어줌 
+
+name : asa-vpn
+host : 2.2.25.5
+group name : asa-vpn-group
+password : cisco123
+비번 확인 : cisco123
+save
+
+접속
+user : admin
+password : cisco
+
+이거 하고 안된다고 하면 windows7 재부팅
+
+만약 잘못쳐서 초기화를 해야하면
+clear configure 하고 초기화 하고싶은 항목 타이핑
+ex) clear configure tunnel-group
+
+
+IOS)
+conf t
+ip http server
+enable pass cisco
+
+windows7)
+인터넷 접속
+주소 : http://192.168.5.100
+사용자 이름 : admin
+암호 : cisco
+
+windows7 cmd)
+ping 1.1.1.1하면 안된다.
+
+ASA)
+same-security
+
+
+ASDM) <vpn도 하고 외부 인터넷 연결을 하려면 이것을 꼭 설정해 주어야함>
+메뉴 configuration
+왼쪽 아래 remote access vpn
+왼쪽 메뉴
+network client access
+group policies
+asa-vpn-group 더블클릭
+advanced > split tunneling
+policy 체크 해제 > tunnel network list below 선택
+network list 도 해제 > 옆에 manager 선택 > add > splite-network
+add > add ace > permit > address : 192.168.5.0 입력 > ok
+
+이러고 
+windows7 vpn client 들어가서 로그인 된걸 disconet해주고 다시 로그인해주고 
+cmd에서 핑해주기
+ping 1.1.1.1
+ping 192.168.5.100
+
+
+
+windows7 vpn client 들어가서 로그인 된걸 disconet해주고 
+메뉴 configuration
+왼쪽 아래 remote access vpn
+왼쪽 메뉴
+network client access
+group policies
+asa-vpn-group 더블클릭
+advanced > split tunneling
+밑에 3개 다 체크
+
+이렇게하면 내부 서버와는 핑이 가는데
+외부로 1.1.1.1에 핑을 하면 asa로 갔다가 핑이 죽어버린다.
+
+
+
+1.1.1.1핑이 다시 가게 하기(hairpin)
+<cloud2에서 R2로 갔다가 외부인터넷과 통신하고 다시R2로돌아오고 cloud2로 돌아옴
+이 사이에 모든 구간은 암호화이다.>
+
+ASA)
+no same-security-traffic permit
+same-security-traffic permit intra-interface
+
+R2)
+int f0/1
+ip nat inside
+
+do sh access-l
+access-list 2 permit 192.168.5.0 0.0.0.255
+
+ip route 192.168.5.151 255.255.255.255 f0/1 2.2.25.5
+
+이러면 다시 1.1.1.1에 핑이감
+
+
+R2랑 ASA랑 1대1 static 설정하기
+2.2.25.0과 R2에 f0/0과 static 설정
+
+R2)
+ip nat inside source static 2.2.25.5 int f0/0
+
+핸드폰 설정에 vpn검색하고 
+정보 입력 후 모바일 웹에 서버 ip인 192.168.5.100을 입력하면
+모바일로도 접속 가능
