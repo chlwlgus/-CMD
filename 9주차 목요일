@@ -1,0 +1,90 @@
+webvpn)
+1. WebVPN을 위한 AAA 설정
+
+- AAA 설정
+
+ aaa new-model
+ aaa authentication login WEBVPN local
+ aaa authentication login CON group radius none
+ aaa authentication login default group radius
+ username user1 secret cisco123
+
+
+- WebVPN 게이트웨이 설정
+
+ webvpn gateway ssl-vpn-gw
+ => 자동으로 rsa키와 디지털 인증서를 생성하고, 인증서 서버로 동작한다.
+
+ webvpn gateway ssl-vpn-gw
+ ip address 2.2.12.2 port 443
+ inservice
+
+
+파일 추가 
+GNS > edit > preferences > dynamips > ous routers > new > next > new image
+> 나머지 기본설정
+i
+
+라우터 3725로 바꾸고
+WebVPN)
+
+conf t
+
+int f0/0
+ip add 10.1.15.1 255.255.255.0
+ip nat inside
+no sh
+
+int f0/1
+ip add 2.2.12.1 255.255.255.0
+ip nat outside
+no sh
+
+ip route 0.0.0.0 0.0.0.0 f0/1 2.2.12.2
+ip route 172.16.5.0 255.255.255.0 f0/0 10.1.15.5
+
+ip nat inside source list 1 int f0/1 overload
+
+access-list 1 permit 172.16.5.0 0.0.0.255
+
+R2)
+
+conf t
+int s1/0
+sh
+
+int f2/0
+ip add 2.2.12.2 255.255.255.0
+ip nat inside
+no sh
+
+다끄고 R2, R4, asa, svr, cloud1, cloud2, cloud3만 키기
+
+windows7)
+ping 192.168.40.253 확인하고
+
+Internal_WEB
+
+http://192.168.5.100
+
+이거하고 윈도우7에서 https://2.2.25.5 로 접속
+
+비번 원래 cisco123 했는데 안됨 asdm > configuration > aaa/local user>
+rauser선택 > edit > change password > cisco로 변경 후 저장
+
+rauser
+cisco
+아이디 비번 입력후 접속
+
+ASA)
+설정한거 다 지우고 다시 설정할 것임
+clear configure tunnel-group
+clear configur crypto 
+clear configure webvpn
+clear configure group-policy
+clear configure username
+
+이거 껐다가 재접하려면
+
+asdm > monitoring > vpn > sessions > 로그아웃 시키기
+다시 2.2.25.5접속하면 로그인이 가능함
