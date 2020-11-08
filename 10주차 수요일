@@ -1,0 +1,42 @@
+ - id 명령을 사용하여 현재 사용자 및 그룹나타내기
+
+useradd -u 0 hacker
+useradd -o -u 0 hacker
+su - hacker
+id
+
+
+ - 달력을 나타내는 명령어를 사용
+
+1년치 달력
+cal -y
+
+현재 해당 월의 달력
+cal
+
+틀정 연월 출력
+cal 5 10 2015
+   일 월   년
+
+
+ - wireshark 실행 및 설치
+
+rpm -i telnet-0.17-64.el7.x86_64.rpm 
+rpm -i wireshark-1.10.14-24.el7.x86_64.rpm 이거 하면 필요한 목록들이 나옴 설치하기
+cd -
+ls libsmi*
+cp libsmi-0.4.8-13.el7.x86_64.rpm /work
+cp c-ares-devel-1.10.0-3.el7.x86_64.rpm /work
+cd -
+ls
+rpm -i libsmi-0.4.8-13.el7.x86_64.rpm 
+rpm -i c-ares-devel-1.10.0-3.el7.x86_64.rpm 
+cd -
+cp c-ares-1.10.0-3.el7.x86_64.rpm /work
+cd -
+rpm -i c-ares-1.10.0-3.el7.x86_64.rpm 
+rpm -i c-ares-devel-1.10.0-3.el7.x86_64.rpm 
+rpm -i wireshark-1.10.14-24.el7.x86_64.rpm 
+rpm -i wireshark-gnome-1.10.14-24.el7.x86_64.rpm 
+wireshark
+하면 wireshark 프로그램이 실행된다.
