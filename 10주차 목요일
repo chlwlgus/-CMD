@@ -1,0 +1,99 @@
+ - 사용자 이름으로 핑 보내기
+
+hostnamectl set-hostname centos1
+centos1)
+
+cd /lab
+cp /etc/hosts .
+ls
+vi /etc/hosts
+o (영어)
+192.168.80.135 tab centos2(centos2의 주소) => 192.168.80.135	centos2이렇게 보임
+192.168.80.134 tab centos1
+esc (명령모드에서 나가기)
+:w (저장)
+:q (나가기)
+
+centos2)
+
+vi /etc/hosts
+o (영어)
+192.168.80.135 tab centos2(centos2의 주소) => 192.168.80.135	centos2이렇게 보임
+192.168.80.134 tab centos1
+esc (명령모드에서 나가기)
+:w (저장)
+:q (나가기)
+
+이렇게 설정하면 ping + 이름으로도 핑이 간다.
+ping centos2
+
+
+ - vi를 사용하여 내용 입력 및 출력
+
+vi virmc.txt
+
+set number
+set ts=3
+ab t today
+set list
+:wq
+
+cat vimrc
+
+
+
+ - vi를 사용하여 기존 내용 변경하기
+
+
+vi test.txt
+
+Come, have breakfast.
+Look at my hands and my feet.
+He saw and believed.
+Who do you say that I am?
+I do know him and I keep his word.
+You always have the poor with word.
+Forgive and you will be forgiven.
+He loved his own to the end.
+The Lord is with you.
+
+
+1. test.txt 파일을 vi 연다.
+
+ - vi test.text
+
+2. 5행으로 가서 해당 라인을 복사해서 8행 아래에 복사한다.
+
+ - 5행에서 yy입력 후 8행 에서 p
+
+3. 5행으로 가서 him을 지우고 her을 입력
+
+5행 him에 가서 cw누르고 her 입력
+
+4. 문서의 제일 처음으로 커서를 옮겨서 own을 검색한다.
+
+ - gg 하고 /won 검색
+
+5. 2행과 3행을 잘라내서 7행위로 이동한다.
+
+ - 2행 맨앞으로 가서 2dd 하고 7행 forgiven.뒤로 가서 p
+
+6. 문서 전체에서 word라는 단어를 찾아서 WORD로 변경한다.
+
+ - :%s/word/WORD/g
+
+7. 문서의 맨 아래줄로 이동해서 I am studing CentOS Linux. 입력
+
+ - G 하고 내려가서 o누르고 I am studing CentOS Linux. 입력
+
+8. Forgive and 삭제하고 you에서 y를 대문자로 변경
+
+ - 13x 하면 Forgive and y까지 지워짐 i눌러서 입력모드로 바꾸고 Y입력
+
+9. 4행과 5행을 한 줄로 합침.
+
+ - 4G누르고 J입력
+
+10. 행 번호 감춤
+
+ - :set nonumber
