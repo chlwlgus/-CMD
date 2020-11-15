@@ -1,0 +1,154 @@
+date
+rdate -s time.bora.net          서버 시간 동기화
+rdate -p time.bora.net          서버 시간 출력
+at 10:57 am
+at> wall "at message test"     접속한 모든 사용자에게 메시지 보내기
+ctrl+d 종료
+
+at -l , atq           예약된 작업 풀력
+atrm -l          작업 삭제
+
+at 10:57 am
+at> wall "at message test" 
+[root@centos2 work]# 
+Broadcast message from root@centos2 (Tue Nov  10 20:57:00 2020):
+
+at message test    실행된 모습
+
+
+ - cron 분 시 일 월 요일 이 5가지 순서 중요
+확인은 -l
+삭제는 -r
+
+=====================
+
+리눅스 파일 시스템 종류
+
+
+df -Th
+more /proc/filesystems
+
+파일을 확장을 시키는 방법
+기존 디스크를 큰것으로 바꾸거나
+디스크를 추가하거나
+
+
+fdisk -l
+fdisk /dev/sdb
+m
+n
+p
+1
+2048
++500M
+p
+n
+p
+2
+4096
+
++500M
+p
+n
+p
+3
+6144
++300M  => 대문자 붙여야돼  
+p
+n
+p
+4
+8192
++300M
+p
+n
+e
+enter
+쭉
+enter(+xxM자리인데 넘어감)
+n
+e
+enter
+쭉
++200M
+n
+e
+enter
+쭉
++200M
+n
+e
+enter
+쭉
+enter(+xxM자리인데 넘어감)
+
+===
+
+
+위에꺼 다지우기
+d
+해서 다 지우고
+
+n
+enter
+enter
++1G
+n
+enter
+enter
+enter
+p
+
+
+
+
+
+
+ - 새로운 하드디스크를 마운트 하는 순서
+1) 파티션 생성
+
+2) 파일시스템 생성
+
+3) 마운트
+
+4) /etc/fstab 마운트 정보 등록
+
+ext 2, 3, 4 파일 시스템을 마운트 하면 해당 마운트 포인트에 lost_found
+디렉토리가 생성된다.
+
+
+mkfs /dev/sdb1
+
+cd /lab
+mkfs /dev/sdb1
+mkfs -t xfs /dev/sdc1
+fdisk /dev/sdc
+mkfs -t ext4 /dev/sdb2
+
+
+mount /dev/sdb1 mpoint1
+mount /dev/sdb2 mpoint2
+mount /dev/sdc1 mpoint3
+
+cp /bin/a* mpoint1
+cp /bin/b* mpoint2
+cp /bin/c* mpoint3
+
+ls mppoint1
+ls mppoint2
+ls mppoint3
+
+마운트 때기
+umonunt mpoint3
+
+ls mpoint3 하면 없음
+
+cd mpoint1
+umount /lab/mpoint1
+
+
+vi /etc/fstab
+/dev/mapper/centos-root /                       xfs     defaults        0 0
+/dev/sdb1               /lab/mpoint1            ext2    defaults        0 0
+/dev/sdb2               /lab/mpoint2            ext4    defaults        0 0
+/dev/sdc1               /lab/mpoint3            xfs     defaults        0 0
