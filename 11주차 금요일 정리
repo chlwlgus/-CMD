@@ -1,0 +1,197 @@
+파일 아카이브와 압축
+
+centos1)
+cd /lab
+ls
+tar cvf test1.tar *  (현제 모든 디렉터리를 묶는다)
+ls
+ls -l
+tar tf test1.tar *
+gzip test1.tar     (이 파일을 압축한다.)  
+ls -hl
+gzip -d test1.tar.gz    =   gunzip test1.tar   (압축 해제)
+bzip2 test1.tar
+bzip2 -d test1.tar.bz2   =  bunzip test1.tar.gz2
+
+mkdir /lab2
+mv test1.tar /lab2
+tar cf test2.tar *
+
+
+
+mv test3.tar /lab2
+cd /lab2
+gzip test1.tar
+bzip2 test2.tar
+xz test3.tar
+
+
+ls -hl
+uncompress test4.tar
+
+mkdir restore
+gunzip test1.tar.gz
+tar xf test1.tar -C restore  압축파일을 해제할 디렉토리를 설정하여 그곳에서 압축 해제
+
+ls restore
+
+rm -rf restore/*
+ls restore
+tar xfj test2.tar.bz -C restore
+rm -rf restore/*
+tar xfJ test3.tar.xz
+rm -rf restore/*
+tar xfz test4.tar.Z -C restore
+
+
+
+https://loganalyzer.adiscon.com/ > download > 4.1.11 링크 복사
+wget http://download.adiscon.com/loganalyzer/loganalyzer-4.1.11.tar.gz
+해서 다운로드하기
+
+tar xf loganalyzer-4.1.11.tar.gz    (압축 풀고 tar 해제)
+ls loganalyzer-4.1.11
+
+tar를 이용해서 압축까지 해제하는 옵션
+xf z : gzip, zip
+xf j : bzip2
+xf Z : compress
+xf J : xz
+
+tar xfz test1.tar
+tar xfj test2.tar.bz2
+
+tar를 이용해서 압축까지 하는 옵션 동일
+cf z
+cf j
+cf Z
+cf J
+
+
+
+tar -zcf test.tar.gz /lab/*
+ls -l
+tar -jcf test.tar.bz2 /lab/*
+ls -l
+tar -Jcf test.tar.J /lab/* 
+ls -l
+tar -Zcf test.tar.Z /lab/* 
+ls -l
+
+
+tar를 이용해서 묶음을 해제할 때 -C를 이용하면 원하는 디렉토리에
+해제할 수 있음
+
+tar xf test1.tar -C /lab2/restore
+
+1. lab디렉토리에 archive 디렉토리 생성
+2. archive 디렉토리 시스템에서 setuid 퍼미션이 설정된 파일 찾아서 복사
+3. archive 디렉토리의 모든 파일을 suid.tar 이름으로 묶어줌
+4. suid.tar 파일을 xz를 이용해서 압축
+5. suid.tar.xz 파일을 /lab2 디렉토리로 이동
+
+
+1. lab디렉토리에 archive 디렉토리 생성
+cd /lab
+mkdir archive
+ls
+
+2. archive 디렉토리 시스템에서 setuid 퍼미션이 설정된 파일 찾아서 복사
+find / -perm -4000 -exec cp {} /lab/archive \;
+
+3. archive 디렉토리의 모든 파일을 suid.tar 이름으로 묶어줌
+tar cf suid.tar /lab/archive/*
+
+4. suid.tar 파일을 xz를 이용해서 압축
+xz suid.tar
+
+5. suid.tar.xz 파일을 /lab2 디렉토리로 이동
+mv suid.tar.xz /lab2
+
+
+
+아카이브에 파일 추가하기 : rvf 옵션
+
+xz -d suid.tar.xz
+tar tf suid.tar
+tar rvf suid.tar /etc/services
+
+
+tar tvf test3.tar.xz
+zcat loganalyzer-4.1.11.tar.gz
+
+cp /etc/profile /etc/shadow .
+tar cf system.tar profile shadow
+gzip system.tar
+zcat system.tar.gz
+
+
+
+소프트웨어 컴파일
+
+yum install gcc
+
+exit
+vi hello.c
+#include <stdio.h>
+int main() {
+printf("Hello, World.\n");
+}
+:wq
+
+gcc hello.c
+./a.out
+gcc -o hello hello.c
+./hello
+
+vi one.c
+#include <stdio.h>
+extern int two();
+int main() {
+printf("Go to Module Two--\n");
+two();
+printf("End of Module One.\n");
+}
+:wq
+
+vi two.c
+#include <stdio.h>
+int two() {
+printf("In Module Two--\n");
+printf("--- This is a Module Two.\n");
+printf("End of Module Two.\n");
+}
+:wq
+
+vi makefile
+TARGET=one
+OBJECTS=one.o two.o
+
+${TARGET} : ${OBJECTS}
+        gcc -o ${TARGET} ${OBJECTS}
+one.o : one.c
+        gcc -c one.c
+two.o : two.c
+        gcc -c two.c
+:wq
+
+
+
+
+yum install ftp
+ftp 192.168.100.101
+anonymous
+pw : enter
+bin
+get minidlna-1.2.1.tar.gz
+bye
+mv minidlna-1.2.1.tar.gz /lab
+cd /lab
+ls
+tar xf minidlna-1.2.1.tar.gz
+ls
+cd minidlna-1.2.1
+ls
+./configure
+yum install libavutil
+yum install libavutil-devel
