@@ -1,0 +1,78 @@
+ - 부트로더 root 암호 복구하기
+esc
+e
+
+init=/bin/bash
+ctrl+x
+vi /etc/shadow
+exit
+mount -o remount,rw /
+mount
+vi /etc/shadow
+root:::0까지 쭉 지우기
+wq!로 저장하고 재부팅
+
+vi /etc/selinux/config
+SELINUX=enforcing
+SELINUX=disabled로 수정하고 리부팅
+
+
+securety centos2)
+grub2-mkpasswd-pbkdf2 
+1234
+1234
+
+grub.pbkdf2.sha512.10000.13AAC89EFB6E555B7855D6DA079952FE205D5CE9F34BAA749A305AE071758D73542D3D876FED5C59D39516182E458893E003515F643244290B773021DA95272B.054AF9CCA92263A16BB7B4E4F9F30325C5C1ED39B8692035DBA62C22311A6C05AA58656442EF240FE446793E39A663347BD90CCCBFFD1CC1648B650BB5D3B20D
+이거 복사하고
+
+vi /etc/grub.d/40_custom
+6 set superusers="root"
+7 password_pbkdf2 root grub.pbkdf2.sha512.10000.13AAC89EFB6E555B7855D6DA079952FE205D5C        E9F34BAA749A305AE071758D73542D3D876FED5C59D39516182E458893E003515F643244290B773021DA        95272B.054AF9CCA92263A16BB7B4E4F9F30325C5C1ED39B8692035DBA62C22311A6C05AA58656442EF2        40FE446793E39A663347BD90CCCBFFD1CC1648B650BB5D3B20D
+
+이렇게 적어줌
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+init 6 해서 재부팅해줌
+
+vmware centos2)
+esc
+e 를 누르면 비밀번호를 물어봐야함
+root
+1234
+
+https://pkgs.org/  들어가서
+xterm 검색 > cntos7 가서 xterm-295들어가서 download binary packege 링크복사해서
+http://mirror.centos.org/centos/7/os/x86_64/Packages/xterm-295-3.el7.x86_64.rpm
+링크 요고임
+
+cnetos2 가서
+wget http://mirror.centos.org/centos/7/os/x86_64/Packages/xterm-295-3.el7.x86_64.rpm
+하고 엔터치면 다운됨
+
+yum install libXaw
+rpm -ivh xterm-295-3.el7.x86_64.rpm  하면 됨
+
+
+
+yum install ftp
+ftp 192.168.100.101
+anonymous (사용자 이름 익명으로)
+password 는 없으므로 enter
+ls
+exit
+
+rpm -qa | grep ftp 
+
+rpm -qf /bin/ftp
+
+rpm -ql ftp-0.17-67.el7.x86_64
+
+rpm -qR xterm-295-3.el7.x86_64
+
+
+yum install http://mirror.centos.org/centos/7/os/x86_64/Packages/gnome-clocks-3.28.0-1.el7.x86_64.rpm
+
+rpm -ivh xterm-295-3.el7.x86_64.rpm 
+
+해주고 vmware 가서 gnome clocks접속 
