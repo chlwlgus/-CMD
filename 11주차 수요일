@@ -1,0 +1,388 @@
+- /dev/sdd 디스크에 파티션 3개 생성
+
+ 1(1G)
+ 2(500M)
+ 3(나머지)
+
+fdisk /dev/sdd
+n
+p
+1
+enter
++1G
+
+n
+p
+2
+enter
++500M
+
+n
+p
+3
+enter
+enter
+
+w
+
+fdisk -l /dev/sdd
+
+
+-파일시스템 생성
+
+ 1(ext3)
+ 2(ext4)
+ 3(xfs)
+
+mkfs -t ext3 /dev/sdd1
+mkfs -t ext4 /dev/sdd2
+mkfs -t xfs /dev/sdd3
+
+
+-마운트 포인트 생성
+
+ /lab/mount/mpoint1
+ /lab/mount/mpoint2
+ /lab/mount/mpoint3
+
+cd /lab
+mkdir mount
+cd mount
+mkdir mpoint1 mpoint2 mpoint3
+
+-파티션을 마운트 포인트에 마운트
+
+mount /dev/sdd1 mpoint1
+mount /dev/sdd2 mpoint2
+mount /dev/sdd3 mpoint3
+
+-마운트 정보를 fstab에 등록 (옵션 defaults, dump 0, fsck 0)
+
+vi /etc/fstab
+
+fdisk /dev/sdd
+n
+p
+1
+enter
++1G
+
+n
+p
+2
+enter
++500M
+
+n
+p
+3
+enter
+enter
+
+w
+
+fdisk -l /dev/sdd
+
+mkfs -t ext3 /dev/sdd1
+mkfs -t ext4 /dev/sdd2
+mkfs -t xfs /dev/sdd3
+
+mkdir mount
+cd mount
+mkdir mpoint1 mpoint2 mpoint3
+
+mount /dev/sdd1 mpoint1
+mount /dev/sdd2 mpoint2
+mount /dev/sdd3 mpoint3
+
+vi /etc/fstab
+
+/dev/sdd1               /lab/mount/mpoint1            ext3    defaults        0 0
+/dev/sdd2               /lab/mount/mpoint2            ext4    defaults        0 0
+/dev/sdd3               /lab/mount/mpoint3            xfs     defaults        0 0
+
+
+========================
+
+parted /dev/sde   (2테라 이상의 크기의 파티션을 할때 사용)
+h
+p
+mklabel gpt   => Partition Table: gpt 이렇게 변함
+mkpart primary 1 1024 
+p   해보면
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  1024MB  1023MB               primary
+
+이렇게 올라감
+
+mkpart primary 1024 1536
+mkpart primary 1536 100%
+
+quit
+
+fdisk -l /dev/sde
+
+
+mkfs. 하고 tab을 누르면 
+
+[root@centos1 mount]# mkfs.
+mkfs.btrfs   mkfs.ext2    mkfs.ext4    mkfs.minix   mkfs.vfat    
+mkfs.cramfs  mkfs.ext3    mkfs.fat     mkfs.msdos   mkfs.xfs   이렇게 나온다
+
+
+
+
+mount
+cp /bin/passwd /lab/mount/mpoint3
+cd mpoint3
+ls mpoint3
+
+mount -o remount,ro mpoint3
+mount | grep sdd3
+
+mount -o remount,rw,nosuid mpoint3
+cp /bin/vi mpoint3
+cd mpoint3
+ls
+ls -l
+chmod 4755 vi
+
+
+
+vi /etc/fstab
+
+/dev/sdd3               /lab/mount/mpoint3      xfs     noexec,nosuid    0 0
+
+
+mount -o remount mpoint3
+mount | grep sdd3
+
+
+===============================
+
+ - 여러 디스크를 하나의 디스크로 사용하는 방법 (LVM 생성 과정)
+
+1단계
+
+vgs
+vi /etc/fstab 들어가서 다 지우기
+umount -a
+mount -a
+df -Th
+
+fdisk /dev/sdb
+p
+d
+enter
+d
+enter 하고 전부 삭제
+w
+
+fdisk /dev/sdb
+p
+
+n
+enter
+enter
+enter
+enter 해서 파티현 하나 통째로 만들기
+
+t
+L
+8e
+p
+해보면 id가 8e로 바뀌어져있다.
+
+
+fdisk /dev/sdc
+p
+
+d
+
+n
+enter
+enter
+enter
+enter
+
+t
+L
+8e
+p
+해보면 id가 8e로 바뀌어져있다.
+
+
+fdisk /dev/sdd
+p
+
+d
+d
+d
+
+n
+enter
+enter
+enter
+enter
+
+t
+L
+8e
+p
+해보면 id가 8e로 바뀌어져있다.
+
+
+
+fdisk -l /dev/sdc
+fdisk -l /dev/sdd 확인
+
+2단계
+
+pvcreate /dev/sdb1 /dev/sdc1 /dev/sdd1
+y
+y
+y
+
+pv를 만들었고 이것들을 묶어 vg를 만들 것이다.
+
+vgcreate gdn9 /dev/sdb1 /dev/sdc1 /dev/sdd1 하면 그룹 생성이 된다.
+
+pvs
+
+vgs
+
+lvcreate -h
+
+lvcreate -L+3G gdn9 -n network
+lvcreate -L+1G gdn9 -n server
+
+lvs
+
+mkfs.xfs /dev/gdn9/network
+mkfs.ext4 /dev/gdn9/server
+
+cd ..
+ls
+mount /dev/gdn9/network mpoint1
+mount /dev/gdn9/server mpoint2
+df -Th
+
+lvextend -L+1G network           
+lvextend -L+1G gdn9/network        => 왼쪽에 설명들은 확장하는 명령어로
+ Size of logical volume gdn9/network changed from 3.00 GiB (768 extents) to 4.00 GiB (1024 extents).
+위와같이 3기가에서 4기가로 바뀐 모습을 볼 수 있다.
+
+
+lvextend -l+100%FREE gdn9/server  => 남아있는 공간 모두 gdn9에있는 서버가 쓴다
+
+fdisk /dev/sde
+parted /dev/sde
+rm 1
+rm 2
+rm 3
+p
+mklabel msdos
+y
+p
+quit
+
+fdisk -l /dev/sde
+
+fisk /dev/sde
+n
+enter
+enter
+enter
+enter
+t
+8e
+p
+
+
+
+pvcreate /dev/sde1
+pvs
+vgextend gdn9 /dev/sde1
+
+lvextend -L+1G gdn9/network
+
+용량을 늘리려면  lvextend로 늘리고 더이상 늘릴 공간이 없으면
+pvcreate 해서 늘리면 된다.
+
+
+df -h
+umount -a
+mount -a
+df -h
+lvremove gdn9/server
+y
+lvremove gdn9/network
+y
+vgremove gdn9
+pvremove /dev/sdb1 /dev/sdc1 /dev/sdd1
+
+fdisk /dev/sdb
+t
+L
+fd
+
+
+fdisk /dev/sdc
+t
+L
+fd
+
+fdisk /dev/sdd
+t
+L
+fd
+
+fdisk /dev/sde
+t
+L
+fd
+
+ls -l /dev
+
+mknod /dev/md0 b 9 0
+ls -l /dev/md0
+
+mdadm --create --verbose /dev/md0 --level=0 --raid-devices=2 /dev/sdb1 /dev/sdc1    >  RAID level 0(디스크 스트라이핑)
+mdadm --detail /dev/md0
+mdadm --stop /dev/md0
+
+
+mdadm --create --verbose /dev/md0 --level=1 --raid-devices=2 /dev/sdb1 /dev/sdc1
+mdadm --detail /dev/md0
+
+mkfs.xfs /dev/md0    파일 시스템 생성
+
+mount /dev/md0 /lab/mpoint1
+df -Th
+
+
+cp /bin/* /lab/mpoint1
+mdadm /dev/md0 -f /dev/sdc1
+mdadm --detail /dev/md0
+
+새로운 하드(sdd)로 교체
+mdadm /dev/md0 --add /dev/sdd1
+
+mdadm /dev/md0 --remove /dev/sdc1
+mdadm /dev/md0 --add /dev/sdc1
+하면 상태가 faulty 였다가 spare로 바뀐다
+
+mdadm /dev/md0 -f /dev/sdb1
+mdadm --detail /dev/md0
+
+해당 파티션을 -f(--fail) 옵션과 함께 문제가 있는
+ 것으로 표시해야 제거할 수 있음.
+
+
+fdisk -l /dev/sde
+umount mpoint1
+mdadm --stop /dev/md0
+mdadm --create /dev/md0 --levlel=10 --raid-devices=4 /dev/sdb1 /dev/sdc1 /dev/sdd1 /dev/sde1
+y
+mdadm --detail /dev/md0
