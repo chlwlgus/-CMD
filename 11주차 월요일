@@ -1,0 +1,77 @@
+ - 4.3.4.4
+
+PC0, Laptop1 default gateway 바꾸기
+
+R1)
+en
+conf t
+int g0/1
+no standby 11
+standby 1 preempt
+standby 1 priority 110
+standby 1 ip 192.168.1.254
+
+
+R2)
+en
+conf t
+int g0/1
+no standby 111
+standby 1 ip 192.168.1.254
+
+
+==========================================
+ - 5.3.1.2
+
+RA)
+en
+conf t
+router ospf 1
+area 0 authentication message-digest
+network 192.168.1.0 0.0.0.255 area 0
+exit
+
+int g0/0
+ip ospf dead-interval 20
+ip ospf hello-interval 5
+ip ospf message-digest-key 1 md5 cisco
+IP OSpf priority 150
+exit
+
+
+RB)
+en
+conf t
+router ospf 1
+area 0 authentication message-digest
+network 192.168.1.0 0.0.0.255 area 0
+exit
+
+int g0/0
+ip ospf dead-interval 20
+ip ospf hello-interval 5
+ip ospf message-digest-key 1 md5 cisco
+IP OSpf priority 100
+exit
+
+
+RC)
+en
+conf t
+router ospf 1
+area 0 authentication message-digest
+default-information originate
+network 192.168.1.0 0.0.0.255 area 0
+passive interface
+passive-interface default
+no passive-interface g0/0
+exit
+
+int g0/0
+ip ospf dead-interval 20
+ip ospf hello-interval 5
+ip ospf message-digest-key 1 md5 cisco
+IP OSpf priority 50
+exit
+
+ip route 0.0.0.0 0.0.0.0 s0/0/0
