@@ -1,0 +1,93 @@
+centos1)
+su -
+qwer1234
+
+rpm -qa | grep vsftp
+
+yum install vsftpd
+rpm -qa | grep vsftpd
+rpm -qc vsftpd.x86_64 0:3.0.2-27.el7
+cd /etc/vsftpd
+vi vsftpd.conf
+
+중앙에 
+local_enable=YES를
+local_enable=NO로 바꿔줌
+systemctl start vsftpd
+systemctl enable vsftpd 이건 부팅하면서 자동으로 생성하도록 만든것
+systemctl status vsftpd 상태 확인
+netstat -an | grep :21
+firewall-cmd --list-all
+
+firewall-cmd --add-service=ftp
+                --add-port=21/tcp 둘중 하나 입력
+
+
+cmd)
+ftp 192.168.80.140
+anonymous
+enter
+ls
+
+알 ftp)
+
+위치 cd /var/ftp/pub
+touch a b c d e
+cd /etc/vsftpd
+vi vsftpd.conf
+
+cd /var/ftp/pub
+systemctl restart vsftpd
+ls -ld
+chmod o+w
+systemctl stop firewall
+
+setenforce 0
+getenforce
+permissive
+
+이렇게 하거나
+vi /etc/sysconfig/selinux들어가서
+SELINUX=disabled로 하거나 둘중 한가지 방법으로
+
+systemctl start firewalld
+firewall-cmd --add-service=ftp
+chmod o-w
+
+
+ - 프로그램 기능 > windows 기능 켜기/끄기 
+인터넷 정보 서비스 ftp서버 다 체크
+웹 관리도구
+아래 3개 iis 관리서비스,스크립트 및 도구, 콘솔 체크 후 확인
+
+ - 고급 보안이 포함된 방화벽
+인바운드규칙
+새규칙
+포트
+tcp
+특정로컬포트 21
+연결 혀용
+이름 : FTP
+
+ - IIS 설정
+Desktip xxxxx 아래 사이트 선택 오른쪽 텝에 ftp 사이트 추가
+ftp > cdisk > inetpub>ftproot 선택
+ssl 사용 안함 > 익명 > 익명 사용자 > 읽기
+
+ - ftp 방화벽 지원
+데이터 채널 포트 범위 6001-6001
+service.msc > 마이크로소프트 ftp서비스 다시 시작
+
+ - 고급 보안이 포함된 방화벽에서
+ftp파일 설정 > 포트를 21, 6001로 변경
+
+centos1에서 
+ftp 192.168.80.1
+anonymous
+enter
+ls 하면
+227 Entering Passive Mode (192,168,80,1,23,113).
+125 Data connection already open; Transfer starting.
+226 Transfer complete.
+
+이렇게 나오는데 여기서 23,113이거는 23*256+113=6001이 된다.
