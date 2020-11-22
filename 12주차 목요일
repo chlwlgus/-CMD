@@ -1,0 +1,239 @@
+yum install rsyslog
+y
+
+
+cd /var/log
+file message
+file wtmp
+file btmp
+systemctl status rsyslog
+rpm -qa | grep rsyslog
+rpm -qc rsyslog-8.24.0-52.el7_8.2.x86_64
+vi /etc/rsyslog.conf
+
+
+>> rsyslog.conf
+
+원격에서 들어오는 syslog 메시지를 수신하기 위한 설정
+syslog는 tcp/udp 514번 사용
+
+# Provides UDP syslog reception
+$ModLoad imudp
+$UDPServerRun 514
+
+# Provides TCP syslog reception
+$ModLoad imtcp
+$InputTCPServerRun 514
+
+#### RULES #### => 로그를 기록하기 위한 정책, 저장 파일
+
+# Save boot messages also to boot.log
+local7.*                                                /var/log/boot.log
+local1.warn                                             /var/log/testlog => 요고 추가해줌
+:wq
+
+systemctl restart rsyslog
+ls
+logger -p local1.warn "rsyslog test"
+ls
+cat testlog
+logger -p local1.info "rsyslog test2"
+cat testlog
+logger -p local1.err "rsyslog test2"
+cat testlog
+netstat -an | grep :514
+firewall-cmd --permanent --add-service=syslog
+firewall-cmd --reload
+firewall-cmd --list-all
+tail -f /var/log/messages
+
+
+ubuntu )
+
+cd /etc/rsyslog.d
+sudo vi 50-default.conf
+
+sudo vi /etc/rsyslog.conf
+cd /etc/rsyslog.d
+sudo vi 50-default.conf
+맨 밑에 *.info			@192.168.80.101
+
+sudo systemctl restart vsftpd
+
+
+gns)
+conf t
+int f0/0
+ip add dhcp
+no sh
+
+int ls0
+ip add 1.1.1.1 255.255.255.0
+no sh
+do ping 192.168.80.101
+
+logging host 192.168.80.101
+logging trap info
+logging source-interface f0/0
+
+
+int lo0
+sh
+no sh
+
+
+=================
+cd /etc/rsyslog.d/
+ls
+cd ..
+cd logrotate.d/
+ls
+cat bootlog
+man logrotate
+vi /etc/logrotate.conf
+
+cd /var/log
+date 
+date --help
+date 1212114220
+logrotate /etc/logrotate.conf
+rdate -s time.bora.net
+date
+
+
+
+vi /etc/vsftpd/vsftpd.conf
+systemctl restart vsftpd
+journalctl _UID=0 _SYSTEMD_UNIT=crond.service
+
+==========
+
+yum install rsyslog-mysql
+yum install mariadb-server -y
+systemctl start mariadb
+systemctl enable mariadb
+yum install httpd php php-mysql php-gd -y
+systemctl start httpd
+systemctl enable httpd
+
+- rsyslog가 DB에 로그를 기록하기 위한 설정
+
+mysql -u root < /usr/share/doc/rsyslog-8.24.0/mysql-createDB.sql
+
+mysql -u root -p
+엔터
+show database;
+use Syslog
+show tables;
+
+ - syslog라는 사용자 이름으로 만들것 이고 모든 권한을 주겠다 비번 1234
+grant all privileges on Syslog.* to syslog@localhost identified by '1234' with grant option;
+
+flush privileges;
+exit
+
+vi /etc/rsyslog.conf
+
+#Module 부분 하단에
+
+$ModLoad ommysql
+
+*.*      :ommysql:localhost,Syslog,syslog,1234
+
+systemctl restart rsyslog
+getenforce
+find / | grep loganalyze
+cd /lab2
+ls
+loganalyzer-4.1.11 이거 있나 확인
+mv loganalyzer-4.1.11 /var/www/html/log 이 파일을 log라는 파일 이름으로 하고 html에 넣음
+cd /var/www/html/
+ls
+
+방화벽 열어주기
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+netstat -an | grep :80
+firewall-cmd --list-all
+
+cd src
+sh ../contrib/configure.sh
+
+웹 브라우저에서
+http://192.168.80.101/log/src/install.php
+
+
+
+mysql -u root -p
+enter
+use Syslog
+show tables; 
+
+
+yum -y install freeradius freeradius-utils
+systemctl start radiusd
+systemctl enable radiusd
+systemctl status radiusd
+grep radius /etc/services
+
+firewall-cmd --add-service=radius --permanent
+firewall-cmd --reload
+pkill radius
+radiusd -X
+systemctl restart radiusd
+
+cd /etc/raddb
+ls
+vi clients.conf
+맨아래
+client R1 {
+	ipaddr = 192.168.80.142
+	secret = cisco123
+}
+
+vi users
+맨위에
+
+admin1 Cleartext-Password := "cisco"
+	Reply-Message := "Hello, %{User-Name}",
+	Service-Type = Shell-User,
+	cisco-avpair = "shell:priv-lvl=15"
+
+$enab15$	Cleartext-Password := "cisco123"
+		Service-Type = Shell-User
+
+
+
+
+
+
+systemctl restart radiusd
+
+cd /etc/raddb
+
+
+router 설정
+
+aaa new-model
+aaa authentication login default group radius
+aaa authentication enable default group radius => enable 패스워드를 radius에서 인증
+aaa authentication login con-auth group radius local
+aaa authorization exec default group radius => 설정된 유저레벨에 따라 프롬프트 진입
+
+radius-server host 192.168.20.100 auth-port 1812 acct-port 1813 key qwer1234
+
+do sh run | s line
+line con 0
+login authentication con-auth
+
+line vty 0 4
+login authentication default
+do sh run | s line
+
+username user1 pass cisco
+radius-server host 192.168.80.101 auth-port 1812 acct-port 1813 key cisco123
+
+end
+test aaa group radius admin1 cisco legacy
+
+
