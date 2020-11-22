@@ -1,0 +1,124 @@
+ - 네트워크 설정
+
+워크스테이션)
+systemctl status NetworkManager
+systemctl stop NetworkManager
+nmcli
+
+
+CRT)
+cd /etc/sysconfig/network-scripts/
+nmcli
+ifconfig
+ip addr
+/etc/sysconfig/network-scripts
+cat ifcfg-ens32
+
+
+crt ubuntu)
+cd /etc/sysconfig/network-scripts/    ubuntu에는 이건 없음
+nmcli
+ifconfig
+ip addr                                     요 3개는 다있음
+
+
+CRT)
+nmcli general status 
+nmcli connection show
+nmcli connection add type ethernet con-name ens32 ifname ens32 ipv4.addresses 192.168.80.134/24 gw4 192.168.80.2
+nmcli
+nmcli connection delete type ethernet con-name ens32 ifname ens32 ipv4.addresses 192.168.80.134/24 gw4 192.168.80.2
+nmcli connection delete con-name 유선\ 연결\ 1 ifname ens32
+
+
+crt centos1)
+nmcli con add type ethernet con-name ens32 ifname ens32 ipv4.addresses 192.168.80.134/24 gw4 192.168.80.2
+nmcli con show
+
+
+CRT)
+nmcli connection modify ens32 ipv4.gateway 192.168.80.254
+route -n
+netstat -r
+nmcli connection show
+systemctl restart NetworkManager
+워크스테이션 네트워크 연결 껐다가 키기
+route -n
+
+
+cat /etc/resolv.conf
+nmcli con mod ens32 ipv4.dns 1.1.1.1
+systemctl restart NetworkManager
+
+nmcli con mod ens32 +ipv4.routes "172.16.2.0/24 192.168.80.2"
+systemctl restart NetworkManager
+
+
+
+nmcli con load ens32
+
+nmcli device show
+ip addr show
+ip addr del 192.168.80.141/24 dev ens32 
+ip addr show ens32
+
+ip route show
+ip route del 172.16.2.0/24 via 192.168.80.2 dev ens32
+route -n
+
+ip route add default via 192.168.80.254 dev ens32
+route -n
+
+ - 주소 변경내용 파일 저장하여 다음에도 불러오도록 하기 안하면 다 날라감
+cd /etc/sysconfig/network-scripts/
+vi ifcfg-ens32
+
+ - DNS 서버지정 설정
+ 
+ nmcli con mod ens32 ipv4.dns 8.8.4.4
+systemctl restart network
+workstation 네트워크 재 연결
+cat /etc/resolv.conf
+
+ - 8.8.8.8 못쓰면 8.8.4.4를 써라라는 설정
+nmcli con mod ens32 ipv4.dns "8.8.8.8 8.8.4.4"
+systemctl restart network
+cat /etc/resolv.conf
+
+
+ - WireShark로 트래픽 캡쳐
+ 
+ configure
+make
+make install
+자신의 리눅스와 ftp 서버(tcp21) 192.168.100.101 사이의 트래픽 캡쳐
+tcpdump -i ens32 host 192.168.80.102 and tcp dst port 21 -w ftp-traffic.cap
+
+worksattion 가서
+ftp 192.168.100.101
+anonymous
+ls
+
+tcpdump -i ens32 src host 192.168.80.102 and dst host 192.168.100.101 and tcp dst port 21 -w ftp-traffic.cap
+
+
+centos1과 centos2 사이에 icmp 캡쳐, 10개만, icmp-traffic.cap
+tcpdump -i ens32 host 192.168.80.101 and host 192.168.80.102 and icmp -c 10 -w icmp-traffic.cap
+
+centos1)
+ping 192.168.80.102 
+
+
+
+dns 트래픽 캡쳐, dns-traffic.pcap. 6개
+tcpdump -i ens32 udp port 53 -c 6 -w dns-traffic.pcap
+
+nslookup www.naver.com
+nslookup www.naver.com
+
+wireshark
+
+
+dns 트래픽 캡쳐, dns-traffic.pcap. 6개 출발지가 서버면
+tcpdump -i ens32 src udp port53
+
