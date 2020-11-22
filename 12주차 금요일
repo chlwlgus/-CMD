@@ -1,0 +1,213 @@
+<tac_plus 설정>
+
+cd /etc/yum.repos.d
+
+vi nux-misc.repo
+[nux-misc]
+name=Nux Misc
+baseurl=http://li.nux.ro/download/nux/misc/el6/x86_64/
+enabled=0               => 0이면 비활성화
+gpgcheck=1
+gpgkey=http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+:wq
+
+yum --enablerepo=nux-misc install tac_plus
+
+cd /etc
+vi tac_plus.conf
+맨위에줄 #key = "cisco123"로 바꾸기
+
+acl = default   {
+                #permit = 192\.168\.0\.
+                permit = 192\.168\.80\.
+}
+
+host = 192.168.80.142 {
+        prompt = "Username:"
+}
+
+user = admin {
+        login = des NGbR0U9ieTjh6
+        service = exec {
+                priv-lvl = 15
+        }
+}
+user = $enab15$ {
+        login = des NGbR0U9ieTjh6
+}
+
+
+맨 아래 이 아래 내용은 위에 내용이랑 중복 되므로 주석처리
+# Global enable level 15 password, generate a new one with tac_pwd
+#user = $enab15$ {
+#       #login = des 97cZOIgSXU/4I
+#}
+
+:wq
+
+tac_pwd =>실행해서 패스워드의 해시값 생성
+cisco  => pwd cisco로 설정
+NGbR0U9ieTjh6 이값이 뜸 이걸 위에 복붙해주기
+
+service tac_plus start
+
+- 실행 
+tac_plus -C /etc/tac_plus.conf
+- 방화벽 개방 : tcp/49
+
+firewall-cmd --permanent --add-port=49/tcp
+firewall-cmd --reload
+service tac_plus restart
+
+gns R2)
+conf t
+int f0/0
+ip add dhcp
+no sh
+
+int lo0
+ip add 2.2.2.2 255.255.255.0
+no sh
+
+do ping 192.168.80.101
+
+- 장비에 AAA설정
+
+aaa new-model
+
+tacacs-server host 192.168.80.101 key cisco123
+
+aaa authentication login default group tacacs+ => 로그인 인증시 tacacs서버에게 인증요청
+aaa authentication login for_console group tacacs+ local => 콘솔 로그인 인증시 tacacs서버에게 인증요청, 
+                                                            서버가 동작하지 않을 경우 local 사용자로 인증.
+aaa authentication enable default group tacacs+ enable  => enable 패스워드를 tacacs서버에게 인증요청
+username user1 password cisco
+
+line console 0
+login authentication for_console
+
+line vty 0 4
+login authentication default
+
+aaa authorization config-commands    => tacacs 서버에게 명령을 실행할 권한 인증요청
+aaa authorization exec default group tacacs+  => enable 모드 진입할 권한 인증요청
+aaa authorization commands 10 default group tacacs+ => privilege 레벨에 따른 명령사용 인증요청
+
+privilege exec level 10 show running-config   => 10번 레벨의 privileged 모드에서 사용할 수 있는 명령 지정
+privilege configure level 10 interface        => 10번 레벨의 configure 모드에서 사용할 수 있는 명령 지정
+
+- tac_plus.conf파일에 privilege 레벨 10의 사용자 추가
+
+user = admin10 {
+        login = cleartext "1234"
+        service = exec {
+                priv-lvl = 10
+        }
+        cmd = show {
+        permit running-config
+        permit privilege
+        deny .*
+        }
+        cmd = configure {
+        permit .*
+        }
+        cmd = interface {
+        permit FastEthernet.*
+        deny .*
+        }
+}
+위에 설정을 하면 int 모드만 허용했기때문에 s0/0은 못들어가며
+level10의 사용자는 conf t 모드를 사용하지 못하며 사용하려면 아래의 cmd를 R2에 쳐줘야한다.
+privilege exec level 10 configure terminal
+
+aaa accounting exec default start-stop group tacacs+ => 접속한 사용자의 실행 세션에 대한 기록 전송
+aaa accounting commands 10 default start-stop group tacacs+ => 사용자가 실행한 명령 전송. 지정한 레벨 이상의 명령만 전송
+
+cat tac.acct
+
+- tac_plus.conf파일에 accounting에 사용할 파일 지정
+
+accounting file = /var/log/tac_plus.acct
+
+
+
+
+
+<802.1X 인증(radius)>
+
+R2)
+aaa new-model
+
+aaa authentication dot1x default group radius
+
+dot1x system-auth-control  => 스위치에 dot1x인증 활성화
+
+int f1/2
+dot1x port-control auto   => 인터페이스에 dot1x인증 활성화
+dot1x host-mode multi-host => 포트에 연결된 호스트가 2대 이상일 경우 설정(AP가 연결된 경우)
+
+centos1)
+route add default gw 192.168.80.250
+
+이거 해주고 win7을 다시 vmnet3으로 바꿔주고 
+ESW)
+int vlan 30
+ip add 192.168.30.253/24
+no sh
+
+int f1/2
+switchport mode access
+switchport access vlan 30
+no dot1x port-control auto
+sh
+no sh
+
+ip routing
+
+ping 192.168.80.101 하면 ttl이 63이 되면서 핑이 감
+이 연결을 다시 끊으려면
+
+EWS)
+int f1/2
+dot1x port-control auto 를 하면 핑이 안감
+
+
+단말에서는 인증서비스가 활성화되어야한다.
+window => Wired AutoConfig 서비스를 활성화
+CentOS => 인터페이스의 보안 Tab에서 서비스활성화
+
+
+=============
+윈7에서 
+services.msc에서 
+wired autoconfig 들어가서 수동으로 시작 유형 변경
+
+
+admin1
+cisco123
+
+esw)
+radius-server host 192.168.80.101 auth-port 1812 acct-port 1813 key cisco123
+
+centos1)
+vi /etc/raddb/clients.conf
+
+맨 밑에
+client sw1 {
+	ipaddr = 192.168.80.250
+	secret = cisco123
+}
+
+systemctl restart radiusd
+
+esw)
+spanning-tree portfast
+end
+test aaa group radius admin1 cisco legacy 
+
+
+int f1/2
+dot1x host-mode multi-host
+no dot1x port-control auto
+dot1x port-control auto
+do sh ip int b
