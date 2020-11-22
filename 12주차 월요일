@@ -1,0 +1,93 @@
+ - etc/group을 사용하여 그룹 바꾸기 및 사용자             비밀번호 출력
+
+centos1 admin)
+who
+
+su -
+useradd user1
+passwd user1
+qwer1234
+qwer1234
+who           // login ID 출력
+su - user1  
+who am i     // login ID 출력
+whoami       // User ID 출력
+who -m
+
+groups
+
+centos2 )
+gpasswd user2
+su - user1
+newgrp user2
+groups
+
+centos1)
+sudo gpasswd user3
+exit
+su - 
+
+vi sudo
+
+centos1)
+
+visudo   // 들어가서
+admin localhost=/bin/gpasswd, /usr/sbin/shutdown -r +10      // 맨 아래 추가
+
+sudo gpasswd user1
+cat /etc/hosts
+
+admin)  root가 아닌 환경에서도 sudo - gpasswd 명령이 실행 가능하게 하기 
+su -
+visudo
+admin ALL=/bin/gpasswd, /usr/sbin/shutdown -r +10            // 맨 아래 localhost를 all로 수정
+exit
+
+admin)
+sudo gpasswd user1    // 가능해짐
+
+
+sudo shutdown -r now            // 불가능 (권한 안줬으므로)
+sudo shutdown -r  +10           // 가능함 (위에 visudo에서 권한 줬으므로)
+=> 이렇듯 정확하게 옵션의 권한을 줬으므로 정확하게 옵션까지 입력해야 실행됨
+
+ - newgrp 명령어 사용하기
+
+cat /etc/group
+grep admin2 /etc/passwd
+su - admin2
+newgrp hacker
+grep admin2 /etc/passwd 
+id 해서 보면 hacker라고 하는 그룹에 2차 그룹에 admin이 추가되있는것을 볼 수 있다.
+newgrp user1
+암호 :          => 여기서 암호는 그룹 pw이다.
+exit
+gpasswd user1
+su - admin2
+
+ - 사용자 계정 관리 명령
+
+1) test01, test02, test03 계정을 생성
+useradd -u 2100 -G 3 -s /bin/sh -c "test01 user" test01
+useradd -u 2200 -G 4 -s /bin/bash -c "test02 user" test02
+useradd -u 2300 -G 5 -s /bin/bash -c "test03 user" test03
+
+2) 1번에서 생성한 사용자 계정 확인
+chage -m 4 -M 200 -W 10 -I 5 -E 2020-12-31 test01
+grep test01 /etc/shadow
+
+3) test01 사용자에게 다음과 같은 패스워드 에이징 설정
+grep test /etc/passwd
+
+4) test03 계정의 UID를 2010으로, 계정의 이름을 test33으로 수정
+usermod -u 2010 -l test33 test03
+grep test33 /etc/passwd
+
+5) test02 사용자를 홈 디렉터리까지 삭제
+userdel -r test02
+grep test /etc/passwd
+ls /home
+
+ - init를 사용한 시스템 명령
+
+init6 / 재부팅
