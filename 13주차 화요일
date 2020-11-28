@@ -1,0 +1,275 @@
+centos1 : mail.gdn9.com
+centos2 : mail.daum.net
+
+yum install postfix dovecot -y
+
+<postfix 기본설정>
+
+1) 메일 서버 호스트 설정
+postconf -e 'myhostname = mail.gdn9.com'
+
+2) 메일 도메인 설정
+postconf -e 'mydomain = gdn9.com'
+
+3) 발송자 도메인 설정
+postconf -e 'myorigin = $mydomain'
+
+4) 리스닝 인터페이스 설정
+postconf -e 'inet_interfaces = all'
+
+5) ipv4만 사용하도록 설정
+postconf -e 'inet_protocols = ipv4'
+
+6) 메일을 받을 도메인 설정
+postconf -e 'mydestination = $mydomain,localhost.$mydomain,localhost,$mydomain,/etc/postfix/local-host-names'
+touch /etc/postfix/local-host-names
+
+7) SMTP 인증을 위한 설정
+postconf -e 'smtpd_sasl_type = dovecot'
+postconf -e 'smtpd_sasl_path = private/auth'
+postconf -e 'smtpd_sasl_auth_enable = yes'
+postconf -e 'smtpd_sasl_security_options = noanonymous'
+postconf -e 'smtpd_sasl_local_domain = $myhostname'
+postconf -e 'smtpd_client_restrictions = permit_mynetworks,permit'
+postconf -e 'smtpd_recipient_restrictions = permit_mynetworks,permit_auth_destination,permit_sasl_authenticated,reject'
+
+8) Dovecot 설정 => 설치 yum install dovecot
+vi /etc/dovecot/dovecot.conf
+
+-프로토콜 설정
+#protocols = imap pop3 lmtp   =>  protocols = imap pop3
+
+-리스닝 인터페이스 설정
+#listen = *, ::  => listen = *
+
+-비밀번호 인증 설정
+vi /etc/dovecot/conf.d/10-auth.conf
+#disable_plaintext_auth = yes => disable_plaintext_auth = no
+
+auth_mechanisms = plain => auth_mechanisms = plain login
+
+-메일박스 위치 변경
+vi /etc/dovecot/conf.d/10-mail.conf
+#mail_location  => mail_location = mbox:/var/empty:INBOX=/var/spool/mail/%u:INDEX=MEMORY
+
+-SMTP 인증 설정
+vi /etc/dovecot/conf.d/10-master.conf
+
+# Postfix smtp-auth
+# unix_listener /var/spool/postfix/private/auth {
+# mode = 0666
+# }
+
+unix_listener /var/spool/postfix/private/auth {
+ mode = 0666
+ user = postfix
+ group = postfix
+}
+
+vi /etc/dovecot/conf.d/10-ssl.conf
+
+ssl = required   =>    ssl = no
+
+
+9) 메일서버 시작 
+# systemctl start postfix dovecot
+
+10) 방화벽 개방
+TCP/25(SMTP), TCP/110(POP3), TCP/143(IMAP)
+
+firewall-cmd --permanent --add-service={smtp,pop3,imap}
+firewall-cmd --reload
+
+telnet localhost 110
+user admin
+pass qwer1234
+
+systemctl restart postfix dovecot
+
+telnet localhost 25
+ehlo gdn9.com
+auth login
+334 VXNlcm5hbWU6
+YWRtaW4=
+334 UGFzc3dvcmQ6
+cXdlcjEyMzQ=  => qwer1234
+
+
+
+cd /var/named
+vi gdn9.zone
+
+$TTL 86400
+@       IN SOA  ns      admin(
+                        20201116
+                        1H
+                        3H
+                        1W
+                        1D)
+
+        IN NS   ns
+        IN MX 10 mail
+ns      IN A    192.168.102.128
+www     IN A    192.168.102.128
+mail    IN A    192.168.102.128
+
+systemctl restart named
+
+nslookup mail.gdn9.com
+
+vi /etc/resolv.conf
+nameserver 192.168.102.128
+
+ubuntu)
+
+sudo vi /etc/resolv.conf
+
+nameserver 192.168.102.128
+:wq
+
+nslookup www.daum.net
+
+nslookup mail.gdn9.com
+
+
+thunderbird mail 들어가서
+admin
+admin@gdn9.com
+qwer1234
+imap mail.gdn9.com 143
+smtp mail.gdn9.com 25
+
+
+user1@gdn9.com
+test massage!!!
+send
+
+
+
+centos2)
+
+
+
+1) 메일 서버 호스트 설정
+postconf -e 'myhostname = mail.daum.net'
+
+2) 메일 도메인 설정
+postconf -e 'mydomain = daum.net'
+
+3) 발송자 도메인 설정
+postconf -e 'myorigin = $mydomain'
+
+4) 리스닝 인터페이스 설정
+postconf -e 'inet_interfaces = all'
+
+5) ipv4만 사용하도록 설정
+postconf -e 'inet_protocols = ipv4'
+
+6) 메일을 받을 도메인 설정
+postconf -e 'mydestination = $mydomain,localhost.$mydomain,localhost,$mydomain,/etc/postfix/local-host-names'
+touch /etc/postfix/local-host-names
+
+7) SMTP 인증을 위한 설정
+postconf -e 'smtpd_sasl_type = dovecot'
+postconf -e 'smtpd_sasl_path = private/auth'
+postconf -e 'smtpd_sasl_auth_enable = yes'
+postconf -e 'smtpd_sasl_security_options = noanonymous'
+postconf -e 'smtpd_sasl_local_domain = $myhostname'
+postconf -e 'smtpd_client_restrictions = permit_mynetworks,permit'
+postconf -e 'smtpd_recipient_restrictions = permit_mynetworks,permit_auth_destination,permit_sasl_authenticated,reject'
+
+8) Dovecot 설정 => 설치 yum install dovecot
+vi /etc/dovecot/dovecot.conf
+
+-프로토콜 설정
+#protocols = imap pop3 lmtp   =>  protocols = imap pop3
+
+-리스닝 인터페이스 설정
+#listen = *, ::  => listen = *
+
+-비밀번호 인증 설정
+vi /etc/dovecot/conf.d/10-auth.conf
+#disable_plaintext_auth = yes => disable_plaintext_auth = no
+
+auth_mechanisms = plain => auth_mechanisms = plain login
+
+-메일박스 위치 변경
+vi /etc/dovecot/conf.d/10-mail.conf
+#mail_location  => mail_location = mbox:/var/empty:INBOX=/var/spool/mail/%u:INDEX=MEMORY
+
+-SMTP 인증 설정
+vi /etc/dovecot/conf.d/10-master.conf
+
+# Postfix smtp-auth
+# unix_listener /var/spool/postfix/private/auth {
+# mode = 0666
+# }
+
+unix_listener /var/spool/postfix/private/auth {
+ mode = 0666
+ user = postfix
+ group = postfix
+}
+
+vi /etc/dovecot/conf.d/10-ssl.conf
+
+ssl = required   =>    ssl = no
+
+
+9) 메일서버 시작 
+# systemctl start postfix dovecot
+
+10) 방화벽 개방
+TCP/25(SMTP), TCP/110(POP3), TCP/143(IMAP)
+
+firewall-cmd --permanent --add-service={smtp,pop3,imap}
+firewall-cmd --reload
+
+telnet localhost 110
+user admin2
+pass qwer1234
+
+systemctl restart postfix dovecot
+
+telnet localhost 25
+ehlo daum.net
+auth login
+334 VXNlcm5hbWU6
+YWRtaW4y
+334 UGFzc3dvcmQ6
+cXdlcjEyMzQ=  => qwer1234
+
+vi /etc/resolv.conf
+nameserver 192.168.102.128
+
+
+centos1)
+cd /etc/dovecot/conf.d
+ls
+vi /etc/dovecot/conf.d/10-master.conf
+cd /var/named
+ls
+
+
+vi daum.zone
+$TTL 86400
+@       IN SOA  ns      admin(
+                        20201116
+                        1H
+                        3H
+                        1W
+                        1D)
+
+        IN NS   ns
+        IN MX 10 mail
+ns      IN A    192.168.102.128
+www.g   IN A    192.168.102.128
+ftp     IN A    192.168.102.128
+mail    IN A    192.168.102.168
+www     IN CNAME www.g.daum.net
+
+systemctl restart named
+
+ubuntu)
+telnet mail.daum.net 25
+telnet mail.daum.net 110
