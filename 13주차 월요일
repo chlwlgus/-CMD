@@ -1,0 +1,365 @@
+centos : 192.168.102.111~134
+centos : 192.168.102.151~174
+ubuntu : 192.168.102.201~224
+
+centos1)
+cd /etc/sysconfig/network-scripts
+vi ifcfg-ens32
+
+IPADDR=192.168.102.128
+NETMASK=255.255.252.0
+PREFIX=22
+
+centos2)
+cd /etc/sysconfig/network-scripts
+vi ifcfg-ens32
+
+IPADDR=192.168.102.168
+NETMASK=255.255.252.0
+BROADCAST=192.168.103.255
+
+그리고 워크스테이션에서 네트워크를 브릿지로 바꿔준다.
+
+centos1,2)
+systemctl restart network
+
+cmd)
+ping 192.168.102.128
+ping 192.168.102.168
+
+ubuntu)
+
+cd /etc/netplan
+sudo vi 00- installer-config.yaml
+
+network:
+  ethernets:
+    ens33:
+      dhcp4: no
+      addresses : [192.168.102.218/22]
+      gateway4 : 192.168.100.1
+      nameservers : 
+                addresses : [8.8.8.8,8.8.4.4]
+  version: 2
+:wq
+
+sudo netplan apply
+
+crt ubuntu)
+설정들어가서 ip 192.168.102.218 입력후 접속
+
+centos1)
+
+ - bind 패키지 확인
+rpm -qa | grep bind
+
+ - bind 패키지 설치
+yum install bind
+y
+
+rpm -qc bind-9.11.4-26.P2.el7.x86_64
+
+ vi /etc/named.conf
+
+options {
+        listen-on port 53 { 192.168.102.128; };
+:wq
+
+systemctl start named
+systemctl status network
+systemctl enable named
+
+firewall-cmd --permanent --add-service=dns 
+firewall-cmd --reload
+
+
+
+centos2)
+
+cat /etc/resolv.conf
+nslookup
+> 알고싶은 주소 작성
+다음을 하면 다음에서 서버 공개를 거절함
+
+이걸 해결하려면
+
+centos1)
+
+vi /etc/named.conf
+
+allow-query     { localhost; };를
+allow-query     { any; };로 바꿔줌
+:wq
+grep allow-query /etc/named.conf
+service named restart
+
+
+centos2)
+
+cat /etc/resolv.conf
+nslookup
+>www.daum.net
+
+cat /etc/sysconfig/network-scripts/ifcfg-ens32
+cat /etc/resolv.conf
+
+
+vi /etc/resolv.conf
+하여 서버 주소8.8.8.8을 주석처리 해버리면 
+nslookup www.daum.net을 해보면 정보를 가지고 오지 못한다.
+
+vi /etc/resolv.conf
+하여 서버 주소를 192.168.102.128을 하면 이 주소에 물어보러 가는 것이다.
+
+centos1)
+vi /etc/named.conf 
+맨 아래쪽에 보면 zone 이 있다 이 다음에 있는 /./는 도메인 주소를 나타낸다.  /./에 .은 현제 최상위를 뜻한다.
+cat /var/named/named.ca를 하면 zone에 대한 정보를 볼 수 있다.
+
+cd /var/named
+ls
+
+cat named.localhost
+
+vi gdn9.zone을 생성
+
+$TTL 86400
+@       IN SOA  ns      admin(
+                        20201116
+                        1H
+                        3H      
+                        1W
+                        1D)     
+
+        IN NS   ns
+ns      IN A    192.168.102.128
+www     IN A    192.168.102.128
+
+ - zone 파일 위치 : /var/named
+ - zone 설정 파일 : /etc/named.rfc1912.zones
+
+vi /etc/named.rfc1912.zones
+zone "gdn9.com" IN {
+        type master;
+        file "gdn9.zone";
+        allow-update { none; };
+};
+systemctl restart named
+
+daum.net 도메인 등록 : zone파일 - daum.zone(ns, www, ftp : 192.168.102.128)
+
+
+
+1) zone파일 생성
+
+vi daum.zone
+
+$TTL 86400                            =>    zone 정보를 유지하는 시간
+@       IN SOA  ns      admin(     =>   @는 도메인을 의미, IN 다음이 RR(Resource Record), ns는 name server에 호스트 명,  admin은 관리자 이메일 주소
+                        20201116       =>   Seroa;
+                        1H                => Refresh : ( )의 정보는 Master/Slave를 사용하는 경우에 유효하는 값
+                        3H                => Retry
+                        1W               => Expire
+                        1D)               => Minimum
+
+        IN NS   ns                       => Respirce Recprd
+ns      IN A    192.168.102.128      => SOA(Start Of Aulthority) : 권한의 시작
+www     IN A    192.168.102.128   => NS(Name Server) : name server
+ftp     IN A    192.168.102.128      => A : ipv4 주소
+                                            => AAAA : ipv6 주소
+                                            => CNAME(Canonical Name) : 공식적인 이름.
+                                            => TXT : text로 된 구문
+                                            => SPF : SPam Fillter
+                                            => MX(Mail eXchanger) : mail server
+                                            => PTR(P)
+
+ - UDP 53 : 일반 사용자 질의시 사용되는 전송프로토콜과 포트번호
+ - TCP 53 : Master/Slave 서버간의 zone transfer시 사용되는 전송 프로토콜과 포트번호
+ - DNS 서버 타입 : hint - caching dns 서버 또는 recursion을 사용하기 위한 DNS서버 타입. zone "."에 설정
+                      : master - 한 대로 DNS서버를 운영할 경우 설정하는 타입
+                      : slave - 한대의 Master 서버에 추가로 설정되는 DNS서버 타입.
+                                 Master 서버의 zone 설정을 가져와서(zone transfer) 사용한다.
+
+2) named.rfc1912.zones에 등록
+
+vi /etc/named.rfc1912.zones
+
+zone "daum.net" IN {
+        type master;
+        file "daum.zone";
+        allow-update { none; };
+};
+
+이렇게 하면 centos2는 다음의 주소를 centos1에서 받아오므로
+직접적인 접속을 하지 못하고 centos1의 주소를 작성해야한다.
+(위에 작성한 vi /etc/resolv.conf
+하여 서버 주소를 192.168.102.128을 하면 이 주소에 물어보러 가는 것이다.)
+이것 때문에
+
+nslookup ns.gdn9.con
+nslookup www.gdn9.com
+
+
+-----
+centos2를 slave DNS로 사용하기
+
+centos2)
+
+ - bind 패키지 설치
+yum install bind
+y
+
+vi /etc/named.conf
+
+﻿
+options {
+listen-on port 53 { 192.168.102.168; };
+listen-on-v6 port 53 { ::1; };
+directory "/var/named";
+dump-file "/var/named/data/cache_dump.db";
+statistics-file "/var/named/data/named_stats.txt";
+memstatistics-file "/var/named/data/named_mem_stats.txt";
+recursing-file "/var/named/data/named.recursing";
+secroots-file "/var/named/data/named.secroots";
+allow-query { any; };
+:wq
+
+﻿
+
+
+systemctl start named
+
+systemctl enable named
+
+firewall-cmd --permanent --add-service=dns 
+firewall-cmd --reload
+
+nslookup
+server 192.168.102.168
+www.daum.net
+
+
+vi /etc/named.rfc1912.zones
+
+zone "daum.net" IN {
+   type slave;
+   masters { 192.168.102.128; };
+   file "slaves/daum.slave";
+}; 
+:wq
+
+
+centos1)
+vi /etc/named.rfc1912.zones
+
+
+zone "daum.net" IN {
+        type master;
+        file "daum.zone";
+        allow-update { none; };
+        allow-transfer { 192.168.102.168; };   ==> slave 주소 적어주기
+};
+:wq
+
+systemctl restart named
+
+
+centos2)
+
+systemctl restart named
+ls slaves 하면 
+
+
+ - positive query : 정방향 질의 = 이름주소를 ip주소로 변환하기 위해 하는 질의
+ - reverse query : 역방향 질의 = ip주소를 이름주소로 변환하기 위해 하는 질의(선택)
+
+
+vi /etc/named.rfc1912.zones
+ - 역방향 zone의 예
+zone "1.0.0.127.in-addr.arpa" IN {
+        type master;
+        file "named.loopback";
+        allow-update { none; };
+};
+
+ - 직접 입력
+zone "102.168.192.in-addr.arpa" IN {
+        type master;
+        file "gdn9.rev";
+        allow-transfer { 192.168.102.168; };
+};
+:wq
+
+cp gdn9.zone gdn9.rev
+
+vi gdn9.rev
+
+$TTL 86400
+@       IN SOA  ns      admin(
+                        20201116
+                        1H
+                        3H
+                        1W
+                        1D)
+
+        IN NS   ns
+ns      IN A    192.168.102.128
+128     IN PTR  www.gdn9.com.
+www     IN A    192.168.102.128
+:wq
+
+systemctl restart named
+
+[root@centos1 named]# nslookup
+> server 192.168.102.128
+Default server: 192.168.102.128
+Address: 192.168.102.128#53
+> 192.168.102.128
+128.102.168.192.in-addr.arpa    name = www.gdn9.com.
+이렇게 이름이 나옴
+
+
+
+vi /etc/named.rfc1912.zones
+
+zone "102.168.192.in-addr.arpa" IN {
+type slave;
+masters { 192.168.102.128; };
+file "slaves/gdn9.slave";
+};
+:wq
+
+
+vi daum.zone
+
+$TTL 86400
+@       IN SOA  ns      admin(
+                        20201116
+                        1H
+                        3H
+                        1W
+                        1D)
+
+        IN NS   ns
+ns      IN A    192.168.102.128
+www.g   IN A    192.168.102.128
+ftp     IN A    192.168.102.128
+www     IN CNAME www.g.daum.net.
+
+결과
+
+[root@centos2 named]# nslookup
+> server 192.168.102.128
+Default server: 192.168.102.128
+Address: 192.168.102.128#53
+> www.daum.net
+Server:         192.168.102.128
+Address:        192.168.102.128#53
+
+www.daum.net    canonical name = www.g.daum.net.
+Name:   www.g.daum.net
+Address: 192.168.102.128
+
+
+
+www.daum.net요 주소는 원래 www.g.daum.net. 이거다라고 말하는 것
