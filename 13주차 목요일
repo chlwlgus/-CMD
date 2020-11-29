@@ -1,0 +1,207 @@
+rpm -qa | grep nfs-utils
+
+yum install nfs-utils -y
+
+cd /lab
+mkdir nfs_share1 nfs_share2
+
+vi /etc/exports
+/lab/nfs_share1         192.168.102.168(rw)    /  centos2 ip 적기
+:wq
+
+systemctl start nfs
+firewall-cmd --permanent --add-service=nfs
+firewall-cmd --reload
+systemctl start nfs-server.service
+
+
+exportfs -a     => /etc/exports 내용대로 공유
+exportfs         => 공유 내용 확인
+
+
+centos2)
+cd /work
+mkdir nfs_mpoint1
+mount -t nfs 192.168.103.198:/lab/nfs_share1 /work/nfs_mpoint1 => centos1 ip
+df
+
+cd /work/nfs_mpoint1
+touch a b c d e    => 허가 거부됨 아래 권한 부여후 다시 생성
+
+
+centos1)
+cd nfs_share1
+ls
+ls -ld
+chmod o+w .
+
+centos2)
+cd nfs_mpoint1
+touch a b c d e
+
+
+centos1)
+vi /etc/exports
+/lab/nfs_share1         192.168.102.168(rw,no_root_squash) 루트로 들어오면 루트로 취급해주겠다는 의미
+:wq
+
+systemctl start nfs
+exportfs -a
+exportfs
+
+
+centos2)
+cd /work
+mount -o remount /work/nfs_mpoint1
+mount | grep nfs
+cd /work/nfs_mpoint1
+
+touch abc
+ls -l
+
+centos1)
+vi /etc/exports
+/lab/nfs_share1         192.168.102.168(rw,no_root_squash) 루트로 들어오면 루트로 취급해주겠다는 의미
+/lab/nfs_share2	    192.168.100.0/22(ro)
+:wq
+
+systemctl start nfs
+exportfs -a
+exportfs
+
+
+centos2)
+cd /work
+mkdir nfs_mpoint2
+mount -t nfs 192.168.103.198:/lab/nfs_share2 /work/nfs_mpoint2
+cd nfs_mpoint1
+touch a b c d
+cd ..
+cd nfs_mpoint2
+touch a b c d e
+
+ping 192.168.103.198
+하면 핑은 가는데 clnt_create: RPC: Port mapper failure - Unable to receive: errno 113 (No route to host)
+이런 문구가 뜬다 포트가 닫혔다는 의미
+
+centos1)
+firewall-cmd --add-port={20048/udp,111/udp} 이렇게 포트 열고
+
+
+centos2)
+ping 192.168.103.198 다시 핑 보내면 잘 간다.
+
+
+
+
+=============
+samba 파일을 d드라이브에 만들고 설정 공유 everyone 생성후 확인
+
+centos2)
+cd /work
+mkdir samba_mpoint
+yum install samba -y
+yum install samba-client -y
+
+smbclient -L 192.168.103.28
+smbclient -L 192.168.103.28 -U GDN9
+
+smbclient -U gdn9 //192.168.103.28/samba (window에 만드는것임)
+mkdir
+ls
+
+영어파일 아무거나 하나 넣고
+get 영어파일  받기
+put 영어파일  올리기
+여러개는 mget 사용
+
+
+mkdir mpoint
+mount -t cifs //192.168.103.28/samba mpoint -o username=gdn9,password=1
+
+파일이랑 한번에 같이 만드려면 위에처럼 만들어도 되고 아래처럼 해도 된다.
+mount -t cifs //192.168.103.28/samba /work/mpoint -o username=gdn9,password=1
+
+centos1)
+
+man smb.conf
+vi /etc/samba/smb.conf
+
+[global]
+workgroup = SAMBA
+----------- 이건 아래 작업 그룹이다.
+컴퓨터 왼쪽 아래 윈도우 우클릭 > 시스템 > 오른쪽 목록에 시스템 정보 작업그룹
+
+workgroup = WORKGROUP 으로 바꿔주기
+
+security = user
+user 는 인증된 사용자만 사용 가능
+share는 인증 없이 공용
+
+yum install samba -y
+yum install samba-client -y
+
+
+vi /etc/samba/smb.conf
+[global] 맨 아래 아래 cmd 추가
+hosts allow = 192.168.102.,192.168.103.
+
+systemctl restart smb nmb
+firewall-cmd --permanent --add-service=samba
+firewall-cmd --reload
+netstat -an | grep :137
+netstat -an | grep :138
+netstat -an | grep :139
+netstat -an | grep :445
+
+getenforce
+setenforce 0
+
+smbpasswd -a admin
+qwer1234
+
+실행 들어가서
+\\192.168.103.198\admin
+서버 ip  사용자 이름적기
+admin
+qwer1234
+하면 접속됨
+
+
+
+ubuntu) 에서 접속해보기
+
+su -
+qwer1234
+mkdir /lab2
+cd /lab2
+mkdir mpoint1 mpoint2
+ls
+mv mpoint1 win-mpoint1
+mv mpoint2/ cent-mpoint2
+ls
+pwd
+
+윈도우
+mount -t cifs //192.168.103.28/samba win-mpoint1 -o username=gdn9,password=1
+
+centos1 서버
+mount -t cifs //192.168.103.198/admin cent-mpoint2 -o username=admin,password=1234
+
+
+centos1,2, ubuntu 전부 다 오른쪽 아래 세팅에 nat로 설정
+리눅스 dhcp는 
+sudo vi /etc/netplan/00-installer-config.yaml
+qwer1234 하고 설정
+
+sudo netplan apply
+
+
+ - Centos에 DHCP 서비스 구성
+
+centos1)
+
+workstation > edit > virtural network > nat setting 다시 하고 
+route -n
+ping 1.1.1.1
+yum install dhcp -y 
