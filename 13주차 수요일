@@ -1,0 +1,68 @@
+mysql -uroot -p
+enter
+
+CREATE DATABASE roundcubemail CHARACTER SET utf8 COLLATE utf8_general_ci;
+GRANT ALL PRIVILEGES ON roundcubemail.* TO round@localhost IDENTIFIED BY '1234';
+                                                             ------                                  -----
+                                                            사용자id                                password
+# yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+# yum install yum-utils
+# yum-config-manager --enable remi-php72
+# yum install php php-fpm php-mcrypt php-cli php-gd php-curl php-xml php-mysql php-mbstring php-pspell php-imagick 
+
+systemctl restart httpd
+
+cd /var/www/html
+wget https://github.com/roundcube/roundcubemail/releases/download/1.4.9/roundcubemail-1.4.9-complete.tar.gz
+
+tar xf roundcubemail-1.4.9-complete.tar.gz
+mv roundcubemail-1.4.9 rc
+ls -l
+chown -R apache.apache
+ls -l
+
+vi /etc/php.ini
+set nu
+904G
+date.timezone = Asia/Seoul
+
+cd /var/www/html
+chown apache.apache -R rc
+
+
+http://192.168.102.128/rc/installer
+www.gdn9.com/rc/installer
+
+next
+
+database setup
+mysql
+localhost
+roundcubemail
+round
+1234
+
+smtp setting
+localhost
+25
+
+맨아래
+config 해서 넘어가기
+
+맨위 continue
+
+데베 빨간데아래 뭔 큰 버튼 있는데 눌러주기
+
+
+admin
+qwer1234
+admin@gdn9.com
+user1@gdn9.com
+send test mail 하고 아래
+
+test imap에
+admin
+qwer1234
+하고
+check login
