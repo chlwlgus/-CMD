@@ -1,0 +1,273 @@
+rpm -qa | grep :dhcp
+
+rpm -qc dhcp-4.2.5
+
+cp /usr/share/doc/dhcp-4.2.5/dhcpd.conf.example /etc/dhcp/
+mv dhcpd.conf.example dhcpd.conf
+
+
+vi dhcpd.conf    
+subnet 192.168.80.0 netmask 255.255.255.224 {
+  range 192.168.80.201  192.168.80.210;
+  option routers 192.168.80.2;
+  option domain-name    "gdn9.com";
+  option domain-name-servers     168.126.63.1;
+}
+:wq
+
+systemctl status -l dhcpd
+systemctl start dhcpd
+
+firewall-cmd --permanent --add-service=dhcp
+firewall-cmd --reload
+
+dhcps(udp/67)   dhcpc(udp/68)
+
+virtual network editer들어가서 
+아래쪽에 use local dhcp service.... 이거 체크 해제
+ok하고
+
+ubuntu)
+sudo netplan apply
+ifconfig
+
+
+
+centos2도 위에꺼처럼
+
+
+
+cp /usr/share/doc/dhcp-4.2.5/dhcpd.conf.example /etc/dhcp/
+mv dhcpd.conf.example dhcpd.conf
+
+
+vi dhcpd.conf    
+subnet 192.168.80.0 netmask 255.255.255.0 {
+  range 192.168.80.201  192.168.80.210;
+  option routers 192.168.80.2;
+  option domain-name    "gdn9.com";
+  option domain-name-servers    168.126.63.1;
+}
+
+81번 째줄
+host ubuntu-svr {
+	hardware ethernet 00:0c:29:ce:9f:fb;
+	fixed-address 192.168.80.100;
+}
+:wq
+
+systemctl status -l dhcpd
+systemctl start dhcpd
+
+firewall-cmd --permanent --add-service=dhcp
+firewall-cmd --reload
+
+dhcps(udp/67)   dhcpc(udp/68)
+
+virtual network editer들어가서 
+아래쪽에 use local dhcp service.... 이거 체크 해제
+ok하고
+
+ubuntu)
+sudo netplan apply
+ifconfig
+
+
+centos1)
+세팅 브릿지로
+
+systemctl stop dhcp
+systemctl restrart network
+
+
+virtual network editer들어가서 
+아래쪽에 use local dhcp service.... 이거 체크
+ok하고
+
+yum install squid -y
+
+vi etc/squid/squid.conf
+
+
+cd /etc/squid
+vi squid.conf
+
+acl SSL_ports port 443 21
+acl Safe_ports port 80          # http
+acl Safe_ports port 21          # ftp
+acl Safe_ports port 443         # https
+acl Safe_ports port 70          # gopher
+acl Safe_ports port 210         # wais
+acl Safe_ports port 1025-65535  # unregistered ports
+acl Safe_ports port 280         # http-mgmt
+acl Safe_ports port 488         # gss-http
+acl Safe_ports port 591         # filemaker
+acl Safe_ports port 777         # multiling http
+acl FTP proto FTP
+always_direct allow FTP
+acl CONNECT method CONNECT
+:wq
+
+
+firewall-cmd --permanent --add-port=3128/tcp
+firewall-cmd --reload
+
+systemctl start squid
+
+netstat -an | grep :3128
+
+systemctl stop squid
+
+systemctl start squid
+
+
+
+systemctl stop firewalld
+rpm -qa | grep iptables
+
+
+yum install iptables
+yum install iptables-services
+systemctl start iptables
+
+iptables -L    = 기본 룰 
+
+netstat -an | grep :23
+
+vi /etc/sysconfig/iptables
+
+11번 라인 yyp해서 복하하고
+12 -A INPUT -p tcp -m state --state NEW -m tcp --dport 23 -j ACCEPT 
+복사한거 12번 이렇게 써주기
+
+
+systemctl restart iptables
+
+
+cmd)
+telnet 192.168.103.215
+admin
+!rneldkzkepal9
+
+
+명령어로 iptables 하기
+vi /etc/sysconfig/iptables
+
+iptables -A INPUT -d 192.168.80.202 -p tcp --dport 80 -j DROP 
+netstat -an | grep :80
+
+
+iptables -A INPUT -d 192.168.80.202 -p tcp --dport 80 -j ACCEPT
+
+systemctl restart iptables
+
+
+vi /etc/sysconfig/iptables
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT 이거 추가
+
+systemctl restart iptables
+
+
+vi /etc/hosts
+192.168.103.215 centos1 입력
+:wq
+
+ping centos1
+iptables -L
+
+
+위에 내용 정리
+firewall-cmd --add-service=ftp
+
+ - firewalld 대신 iptables 방화벽 사용하기
+
+systemctl stop firewalld
+systemctl disable firewalld
+
+yum install iptables -services
+
+룰 설정 파일 :  /etc/sysconfig/iptables
+설정 파일에 들어가서 직접 추가, 변경, 삭제 후 저장
+
+service iptables restart
+
+cmd에서 명령으로 룰 추가
+
+iptables -l INPUT -d 192.168.103.215 -m state --state NEW -p tcp --dport 23 -j ACCEPT
+=> 출발지는 any 목적지는 192.168.103.215 목적지 프로토콜과 포트 tcp/23에 해당하는 트래픽 허용
+
+service iptables save   => 추가 룰 저장
+service iptables restart => 서비스 재시작(변경된 룰 적용)
+
+
+
+==============
+nmap
+
+yum install nmap -y
+
+
+nmap 192.168.103.28
+
+nmap -O 192.168.103.28
+
+nmap -sU -v 192.168.103.28
+
+nmap -sS 192.168.103.28 
+
+
+netstat -an | grep :23
+tcp6       0      0 :::23                   :::*                    LISTEN  
+23번 포트를 사용하여 서비스가 되고 있으며 보통 23번 포트는 텔넷이다.
+
+
+
+cd /etc/pam.d
+yum install vsftpd -y
+cat vsftpd
+cat /etc/vsftpd/ftpusers
+
+vi login
+auth       required     pam_listfile.so item=user sense=deny file=/etc/loginusers onerr=succeed
+=> 로그인 할 때 이 파일안에 있는 사용자는 로그인을 막겠다. 
+
+vi /etc/loginusers
+admin
+:wq
+
+
+vi remote
+맨 위에
+auth       required     pam_listfile.so item=user sense=deny file=/etc/loginusers onerr=succeed
+추가
+
+
+
+systemctl restart telnet.socket
+
+이거 해주고
+
+send new window 해줘서 다른창으로 같은거 열고
+설정 들어가서 telnet으로 바꿔주고 접속
+admin
+!rneldkzkepal9  하면 막혀야함
+
+
+https://kb.biznetgio.com/id_ID/98220-monitoring/how-to-install-and-configure-opennms-monitoring
+
+
+ubuntu) - openNMS
+su -
+qwer1234
+
+apt install openjdk-11-jdk && unzip
+wget https://github.com/opennms-forge/opennms-install/archive/master.zip
+unzip master.zip
+cd opennms-install-master
+bash bootstrap-debian.sh
+yes
+admin
+qwer1234
+echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> /etc/default/opennms
+systemctl restarts opennms 
+ / usr / share / opennms / bin / install -dis
