@@ -1,0 +1,261 @@
+1. 데이터베이스 생성
+create database BookDB;
+show databases; 
+use BookDB;
+
+2. 테이블 생성
+create table Author (
+a_no int Not NULL primary key,
+a_name VARCHAR(20),
+age int);
+
+
+create table Book (
+b_no VARCHAR(20) primary key,
+b_name VARCHAR(20),
+a_no INT Not NULL);
+
+3. 입력할 데이터 확인
+
+4. 데이터 입력
+insert into Author values (201,'이저자', 35);
+insert into Author values (202,'김저자', 40);
+select*from Author;
+
+insert into Book values ('A01','Linux 실습', 201);
+insert into Book values ('A02','DB 개론', 201);
+insert into Book values ('B01','소설 A',301);
+select*from Book;
+
+5. Author테이블의 모든 데이터 검색
+SELECT *
+FROM Author;
+
+
+6. Author 테이블과 Book테이블에서 '이저자'의 책 이름과 나이 검색
+SELECT Book.b_name, Author.age
+FROM Book, Author
+WHERE Author.a_no = Book.a_no;
+
+7. Book 테이블에서 '소설A'의 저자번호를 301에서 202로 수정한다.
+update Book 
+set a_no=202
+where b_name='소설 A';;
+
+8. Book 테이블에서 책 번호가 B01인 레코드를 검색하여 제대로 수정되었는지 확인한다.
+SELECT *
+From Book
+where b_no LIKE 'B01';
+
+===========================
+centos1)
+
+rpm -qa | grep httpd
+yum install httpd -y
+
+systemctl start httpd
+systemctl stop iptables
+systemctl status iptables
+systemctl start firewalld
+
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+
+윈도우
+http://192.168.80.131/   접속하기
+
+설정파일 설정
+rpm -qc
+
+rpm -qc httpd.x86_64 0:2.4.6-97.el7.centos
+vi /etc/httpd/conf/httpd.conf
+:q
+
+cd /var/www/html
+ls
+cat > index.html
+Centos Web Server
+
+/etc/httpd/conf/httpd.conf    >   설정 파일
+vi index.html
+
+<html>
+<head>
+<title>
+html tes
+</title>
+</head>
+<body>
+My First Web Page!!!
+</body>
+</html>
+:wq
+
+cd /etc/httpd/conf.d
+vi userdir.conf
+
+    # UserDir disabled    =이거 주석처리해주고
+
+    #
+    # To enable requests to /~user/ to serve the user's public_html
+    # directory, remove the "UserDir disabled" line above, and uncomment
+    # the following line instead:
+    #
+    UserDir public_html  = 이거 주석 삭제
+:wq
+
+su - admin
+mkdir public_html
+chmod 701 .
+chmod 701 public_html
+
+cp /var/www/html/index.html .
+mv index.html public_html/
+
+vi index.html
+<html>
+<head>
+<title> 
+admin html test
+</title>
+</head>
+<body>
+<h1>Admin Web Page!!!</h1>
+</body>
+</html>
+:wq
+
+http://192.168.80.131/~admin
+
+
+cd /etc/httpd/conf.d
+
+yum remove php-mysql
+yum install php php-gd php-mysqlnd -y
+
+
+systemctl restart httpd mariadb
+
+cd /var/www/html
+cat > phpinfo.php
+<?php phpinfo(); ?>
+ctrl+d
+
+http://192.168.80.131/phpinfo.php
+
+centos에서 프로그램 firfox 실행 후
+sir.co.kr > 그누보드5 > download > 5.4.3
+
+yum install ftp
+
+ftp 192.168.100.101
+anonymous
+enter
+bin
+ls
+mget gnuboard5.4.3.patch.tar.gz
+bye
+
+ls
+mkdir gb
+mv gnuboard5.4.3.tar.gz gb
+tar xf gnuboard5.4.3.tar.gz
+ls
+
+mysql -u root -p
+create database gnu;
+
+use gun
+
+
+grant all privileges on gnu.* to gnuser@localhost identified by '1234';
+mkdir data
+chmod 707 data
+
+
+http://192.168.80.131/gb/adm/boardgroup_list.php
+
+설정 및 로그인
+admin
+1234
+오른쪽 맨위 관리자 > 왼쪽 3번째 텝에서 게시판 그룹 생성 > 게시판  생성
+> 테이블 및 게시판 제목, 게시판 관리자 설정
+
+centos1)
+
+su - admin
+ls
+cd public_html/
+
+
+vi index.html
+<h1>Admin Web Page!!!</h1>
+<a href=http://192.168.80.131/gb/bbs/board.php?bo_table=Linux_bbs>리눅스실습게시판연결</a>
+:wq
+
+
+http://192.168.80.131/~admin 하면
+링크뜸 그 링크 눌러서 아까 설정한 리눅스 실습 게시판 연결
+
+
+사용자 하나 더 추가
+useradd
+
+su - 
+qwer1234
+cd /var/www/html/gb
+useradd cjh
+passwd cjh
+qwer1234
+qwer1234
+
+
+su - cjh
+
+mkdir public_html
+chmod 701 .
+chmod 701 public_html
+
+cp /var/www/html/index.html .
+mv index.html public_html/
+
+vi index.html
+<html>
+<head>
+<title> 
+admin html test
+</title>
+</head>
+<body>
+<h1>Admin Web Page!!!</h1>
+</body>
+</html>
+:wq
+
+http://192.168.80.131/~cjh
+
+http://192.168.80.131/gb/
+admin
+1234
+오른쪽 맨위 관리자 > 왼쪽 3번째 텝에서 게시판 그룹 생성 > 게시판  생성
+> 테이블 및 게시판 제목, 게시판 관리자 설정
+
+
+cd public_html/
+vi index.html 
+
+<html>
+<head>
+<title> 
+cjh html test
+</title>
+</head>
+<body>
+<h1>cjh Web Page!!!
+<a href=http://192.168.80.131/gb/bbs/board.php?bo_table=Network_bbs>네트워크실습게시판연결</a>
+</h1>
+</body>
+</html>
+:wq
+
+http://192.168.80.131/~cjh
