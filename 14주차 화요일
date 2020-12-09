@@ -1,0 +1,474 @@
+mysql -u root -p
+
+show databases;
+use mysql
+show tables;
+use test
+
+create table st_grade (ST_ID int Not NULL primary key, Linux int, DB int);
+desc st_grade;
+select*from st_info;
+update st_info set NAME='kim' where ST_ID=102;
+
+
+데이터 추가
+
+st_info
+101  lee   Software
+103  park Network
+104  choi Network
+
+st_grade
+101  80  90
+102  75  80
+103  95  88
+104  85  70
+
+insert into st_info values (101,'lee', 'Software');
+insert into st_info values (103,'park', 'Network');
+insert into st_info values (104,'choi', 'Network');
+select*from st_info;
+
+
+insert into st_grade values (101,80,90);
+insert into st_grade values (102,75,80);
+insert into st_grade values (103,95,88);
+insert into st_grade values (104,85,70);
+select*from st_grade;
+
+select*from st_info where ST_ID=103;
+select ST_ID,NAME from st_info where ST_ID=103;
+select ST_ID 학번,NAME 성명 from st_info where ST_ID=103;
+select ST_ID,Linux from st_grade;
+
+
+학번이 104번인 학생의 Linux 점수를 조회하는데 이름과 학과도 표시해야함.
+
+select st_info.ST_ID, st_info.NAME, st_info.DEPT, st_grade.Linux 
+from st_info,st_grade
+where st_info.ST_ID=104 and st_grade.ST_ID=104;
+
+select st_info.ST_ID, st_info.NAME, st_info.DEPT, st_grade.Linux 
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+and st_info.ST_ID=104;
+
+
+DB점수가 80점을 넘는 학생 조회(학번, 이름, 학과, DB점수)
+
+select st_info.ST_ID, st_info.NAME, st_info.DEPT, st_grade.DB
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+and st_grade.DB>80;
+
+
+Network 학과의 학생 중에 Linux점수가 91점 이상인 학생의 학번과 성명 출력
+
+
+select st_info.ST_ID, st_info.NAME
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+and st_info.DEPT='Network'
+and st_grade.Linux>91;
+
+
+학생 정보를 점수를 포함하여 모두 출력
+select*
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID;
+
+
+Linux점수가 높은 학생순으로 출력
+select st_info.ST_ID,st_info.NAME,st_info.DEPT, st_grade.Linux, st_grade.DB
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+order by st_grade.Linux;
+
+
+Linux점수가 높은 학생 내림차순으로 출력
+select st_info.ST_ID,st_info.NAME,st_info.DEPT, st_grade.Linux, st_grade.DB
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+order by st_grade.Linux desc;
+
+
+insert into st_info values (105, 'kang', 'Network');
+insert into st_grade values (105, 80, 90);
+
+select st_info.ST_ID,st_info.NAME,st_info.DEPT, st_grade.Linux, st_grade.DB
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID;
+
+102번 학생의 학과를 Network로 변경, 104번의 학생의 학과를 Security로 변경
+
+update st_info set DEPT='Network' where ST_ID=102;
+update st_info set DEPT='Security' where ST_ID=104;
+
+select st_info.ST_ID,st_info.NAME,st_info.DEPT, st_grade.Linux, st_grade.DB
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID;
+
+
+학과별 학생 수 출력
+
+select count(st_info.NAME)
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+group by st_info.DEPT;
+
+
+Network학과의 학생 중에 Linux 점수가 80점 이상인 학생 수
+
+select count(st_info.NAME)
+from st_info,st_grade
+where st_info.ST_ID=st_grade.ST_ID
+group by st_info.DEPT, st_grade.Linux
+having st_info.DEPT='Network'
+and st_grade.Linux>80;
+
+
+cd /run/media/admin2/Centos\ 7\ x86_64/packages\
+cp ftp-0.17-67.el7.x86_64.rpm /tmp
+
+cd /tmp
+
+rpm -i ftp-0.17-67.el7.x86_64.rpm 
+
+ftp 192.168.80.1
+anonymous
+
+파일 복사해서 어디다 붙여넣고
+거기 들가서
+get demo_madang.sql
+
+
+mysql -u root -p
+source /tmp/demo_madang.sql
+quit
+
+cd /etc/my.cnf.d
+grep utf8*
+
+vi client.cnf
+      2 # These two groups are read by the client library
+      3 # Use it for options that affect all clients, but not the server
+      4 #
+      5 
+      6 
+      7 [client]
+      8 default-character-set=utf8
+      9 
+     10 # This group is not read by mysql client library,
+     11 # If you use the same .cnf file for MySQL and MariaDB,
+     12 # use it for MariaDB-only client options
+     13 [client-mariadb]
+:wq
+
+vi mysql-clients.cnf
+      6 [mysql]
+      7 default-character-set=utf8
+:wq
+
+vi server.cnf 
+      9 [server]
+     10 character-set-server=utf8
+:wq
+
+systemctl restart
+
+mysql -u root -p
+source /tmp/demo_madang.sql
+select * from Book;
+
+
+
+
+https://dbeaver.io/
+기본값으로 설치
+
+
+192.168.80.202
+
+centos2)
+
+dbeaver > 텝 > 데이터베이스 > 새 데이터베이스
+madang
+madang
+1234
+
+firewall-cmd --permanent --add-service=mysql
+firewall-cmd --perm --add-port=3306/tcp
+firewall-cmd --reload
+
+mysql -u root -p
+grant all privileges on madamg.*to madang@'%' identified by '1234'; 
+
+
+ppt 
+
+dbeaver)
+sql 편집기
+sql 편집
+select*
+from book 하고 실행하면 book의 정보가 나온다.
+
+모든 도서의 이름과 가격을 검색하시오
+select bookname, price
+FROM Book;
+
+
+모든 도서의 가격과 이름을 검색하시오
+select price, bookname 
+FROM Book;
+
+
+모든 도서의 도서번호, 도서이름, 출판사, 가격을 검색하시오
+SELECT bookid, bookname, publisher, price
+FROM Book
+
+또는
+
+SELECT *
+FROM Book;
+
+
+도서 테이블에 있는 모든 출판사를 검색하시오
+SELECT publisher
+FROM Book;
+
+
+도서 테이블에 있는 모든 출판사를 검색하시오(중복 제외)
+SELECT DISTINCT publisher
+FROM Book;
+
+
+가격이 20,000원 미만인 도서를 검색하시오.
+SELECT *
+FROM Book
+WHERE price <20000;
+
+
+가격이 10,000원 이상 20,000 이하인 도서를 검색하시오
+
+SELECT *
+FROM Book
+WHERE price >= 10000 and price <= 20000;
+
+또는 
+SELECT *
+FROM Book
+WHERE price BETWEEN 10000 AND 20000;
+
+
+출판사가 ‘굿스포츠’ 혹은 ‘대한미디어’인 도서를 검색하시오.
+
+SELECT *
+FROM Book
+WHERE publisher in ('굿스포츠', '대한미디어');
+
+
+출판사가 ‘굿스포츠’ 혹은 ‘대한미디어’가 아닌 도서를 검색하시오.
+
+SELECT *
+FROM Book
+WHERE publisher not in ('굿스포츠', '대한미디어');
+
+
+‘축구의 역사’를 출간한 출판사를 검색하시오.
+
+SELECT bookname, publisher
+FROM Book
+WHERE bookname LIKE '축구의 역사';
+
+
+도서이름에 ‘축구’가 포함된 출판사를 검색하시오.
+
+SELECT bookname, publisher
+FROM Book
+WHERE bookname LIKE '%축구%';
+
+
+도서이름의 왼쪽 두 번째 위치에 ‘구’라는 문자열을 갖는 도서를 검색하시오.
+SELECT *
+FROM Book
+WHERE bookname LIKE '_구%';
+
+
+축구에 관한 도서 중 가격이 20,000원 이상인 도서를 검색하시오.
+
+SELECT *
+FROM Book
+WHERE bookname LIKE '%축구%' AND price >= 20000;
+
+
+출판사가 ‘굿스포츠’ 혹은 ‘대한미디어’인 도서를 검색하시오.
+
+SELECT *
+FROM Book
+WHERE publisher='굿스포츠' OR publisher='대한미디어';
+
+
+도서를 이름순으로 검색하시오.
+
+SELECT *
+FROM Book
+ORDER BY bookname;
+
+
+도서를 가격순으로 검색하고, 가격이 같으면 이름순으로 검색하시오.
+
+SELECT *
+FROM Book
+ORDER BY price, bookname; 
+
+
+도서를 가격의 내림차순으로 검색하시오. 만약 가격이 같다면 출판사의 오름
+차순으로 검색한다.
+
+SELECT *
+FROM Book
+ORDER BY price DESC, publisher ASC;
+
+
+고객이 주문한 도서의 총 판매액을 구하시오.
+
+SELECT SUM(saleprice)
+FROM Orders;
+
+
+2번 김연아 고객이 주문한 도서의 총 판매액을 구하시오.
+
+SELECT SUM(saleprice) AS 총매출
+FROM Orders
+WHERE custid=2;
+
+2번 고객의 이름 출력
+select name from Customer where custid=2;
+
+
+고객 id와 누적 구매가격 출력
+select custid, count(bookid), sum(saleprice) from Orders group by custid;
+
+
+고객 테이브로가 join하여 위에 id 대신 이름이 나오게 출력
+select Customer.name, count(*), sum(Orders.saleprice)
+from Orders,Customer 
+where Orders.custid = Customer.custid
+group by Orders.custid;  
+
+
+select Customer.name, Customer.address, count(*), sum(Orders.saleprice)
+from Orders,Customer 
+where Orders.custid = Customer.custid
+group by Orders.custid;  
+
+고객의 주소 출력
+
+ - 전체 고객별로 주문한 책 제목과 주문 날짜 출력
+고객명   책 제목    주문날짜
+
+SELECT Customer.name, Bookname, Orders.orderdate
+from Customer, Book, Orders
+Where Customer.custid = Orders.custid
+and Orders.bookid=Book.bookid;
+
+
+고객중에 2권 이상이거나 금액이 30000원 이상 인 고객 출력
+SELECT Customer.name, Orders.address
+FROM Customer, Orders
+WHERE Customer.custid=Orders.custid
+group by Customer.custid, Orders.saleprice
+having count(*) >= 2
+or sum(Orders.saleprice) >= 30000;
+
+
+select Customer.name, customer.address
+from Customer, Orders
+where Customer.custid=Orders.custid
+group by Customer.custid
+having count(*)>=2
+OR sum(Order.saleprice) >=30000;
+
+
+책 제목으로 그룹 정렬
+책제목, 고객명
+
+select Book.bookname, Customer.name
+from Book, Customer, Order
+where Book.bookid = Order.bookid
+and Customer.custid = Order.custid
+group by Book.bookname;
+
+
+select Customer.name,sum(Orders.saleprice)
+from Orders,Customer
+where Customer.custid = Orders.custid
+order by total desc
+limit 1;
+
+
+
+도서를 구매한 적이 있는 고객의 이름을 검색하시오.
+
+SELECT name
+FROM Customer
+WHERE custid IN (SELECT custid
+FROM Orders);
+
+
+대한미디어에서 출판한 도서를 구매한 고객의 이름을 보이시오.
+
+SELECT name
+FROM Customer
+WHERE custid IN (SELECT custid
+FROM Orders
+WHERE bookid IN (SELECT bookid
+FROM Book
+WHERE publisher='대한미디어'));
+
+view : 실제 테이블을 쿼리한 내용을 이용해서 만들어 놓은 가상의 테이블
+select Customer.custid, Customer.address, Book.publisher, Book.bookname
+from Customer, Orders, Book
+where Customer.custid = Orders.custid
+and Orders.bookid = Book.bookid;
+
+create view Order_Cust as 
+select Customer.custid, Customer.address, Book.publisher, Book.bookname
+from Customer, Orders, Book
+where Customer.custid = Orders.custid
+and Orders.bookid = Book.bookid;
+
+
+desc Order_Cust;
+
+select name, bookname
+from Order_Cust;
+
+
+주문이 있는 고객의 이름과 주소를 보이시오
+
+SELECT name, address
+FROM Customer cs
+WHERE EXISTS (SELECT *
+FROM Orders od
+WHERE cs.custid =od.custid);
+
+
+
+SELECT name, address
+FROM Customer cs
+WHERE not  EXISTS (SELECT *
+FROM Orders od
+WHERE cs.custid =od.custid);
+
+
+madang을 사용자만 접속 가능하게 했는데 root도 가능하게 하려면
+ - 원격
+grant all privileges on *.* to root@'%' identified by '1234';
+ - 로컬
+grant all privileges on *.* to root@'local' identified by '1234';
+
+use mysql
+desc user;
+select grant_priv from user;
+select User, Show_db_priv from user;
