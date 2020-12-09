@@ -1,0 +1,295 @@
+centos2)
+
+
+centos2에도 디스크 쿼터 1G를 해야하는데 
+문제를 보면 centos2에 리눅스 시스템은 추가 하드가 없어 sdb로 들어가서
+파티션을 하지 못하는데 어떻게 디스크 쿼터를 해야하나요?
+
+홈 디렉토리를 디스쿼터를 건다
+루트 자체를 쿼터
+
+
+
+
+
+ - root 파티션에 xfs 옵션 사용가능하도록 설정하기
+vi /etc/default/grub
+6번라인에
+GRUB_CMDLINE_LINUX="spectre_v2=retpoline rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet rootflags=uquota,gquota,pquota"
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+리부팅  
+
+
+
+
+
+vi /etc/fstab
+/dev/mapper/centos-root /                       xfs     defaults,uquota 0 0
+umount -a
+mount -a
+
+cat /etc/fstab
+xfs_quota -x /
+limit bsoft=1000m bhard=1100m projb1
+report -h -u  => xfs 설정 확인
+quit
+
+add-service=NFS
+
+
+ 시나리오 3
+yum install mysql
+yum install mariadb -y
+yum install mariadb-server -y
+
+firewall-cmd --permanent --add-service=mysql
+firewall-cmd --reload
+
+
+mysql -u root -p
+
+
+데이터 베이스 생성
+show databases; 
+create database PROJS;
+show databases; 
+use PROJS;
+
+테이블 생성   int Not NULL primary key,
+create table proj_list (
+id int,
+name VARCHAR(20),
+proj VARCHAR(20),
+dept VARCHAR(20));
+
+
+
+insert into proj_list values (100, 'proja1', 'ProjA', 'Design');
+insert into proj_list values (101, 'proja2', 'ProjA', 'Program');
+insert into proj_list values (102, 'proja3', 'ProjA', 'Art');
+insert into proj_list values (201, 'projb1', 'ProjB', 'Program');
+insert into proj_list values (202, 'projb2', 'ProjB', 'Design');
+insert into proj_list values (203, 'projb3', 'ProjB', 'Program');
+select*from proj_list;
+
+
+ - 시나리오 4
+rpm -qa | grep httpd
+yum install httpd -y
+
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+systemctl start httpd
+http://192.168.80.110/
+
+cd /var/www/html
+ls
+cat > index.html
+Centos Web Server
+
+/etc/httpd/conf/httpd.conf    >   설정 파일
+vi index.html
+
+<html>
+<head>
+<title>
+html tes
+</title>
+</head>
+<body>
+Proj
+</body>
+</html>
+:wq
+
+
+vi /etc/httpd/conf.d/userdir.conf
+
+#UserDir disabled 주석 해주고
+UserDir public_html 주석 풀어주고
+<Directory "/home/*/public_html"> 이거 복사해서 맨아래 추가
+    AllowOverride FileInfo AuthConfig Limit Indexes
+    Options MultiViews Indexes SymLinksIfOwnerMatch IncludesNoExec
+    Require method GET POST OPTIONS
+</Directory>
+
+
+사용자 1,2,3,market까지 해주기
+
+su - proja1
+mkdir public_html
+chmod 701 .
+chmod 701 public_html
+
+cp /var/www/html/index.html .
+mv index.html public_html/
+cd public_html/
+
+vi index.html
+<html>
+<head>
+<title> 
+proja1 html
+</title>
+</head>
+<body>
+<h1>proja1 Web Page!!!</h1>
+</body>
+</html>
+:wq
+
+exit
+vi /etc/sysconfig/selinux
+SELINUX=disabled
+
+setenforce 0
+
+vi /etc/httpd/conf/httpd.conf
+<Directory />
+    AllowOverride none
+    Require all granted
+</Directory>
+
+systemctl restart httpd
+
+http://192.168.80.110/~proja1
+
+
+cd /etc/httpd/conf.d
+
+yum install php php-gd php-mysqlnd -y
+
+
+systemctl restart httpd mariadb
+
+cd /var/www/html
+cat > phpinfo.php
+<?php phpinfo(); ?>
+ctrl+d
+
+http://192.168.80.110/phpinfo.php
+
+centos에서 프로그램 firfox 실행 후
+sir.co.kr > 그누보드5 > download > 5.4.3
+
+
+yum install ftp -y
+
+ftp 192.168.100.101
+anonymous
+enter
+bin
+ls
+mget gnuboard5.4.3.patch.tar.gz
+mget gnuboard5.4.3.tar.gz gb
+bye
+
+ls
+mkdir gb
+mv gnuboard5.4.3.tar.gz gb
+cd gb/
+tar xf gnuboard5.4.3.tar.gz
+tar xf gnuboard5.4.3.patch.tar.gz
+ls
+
+mysql -u root -p
+
+show databases; 
+use PROJS
+
+========
+grant all privileges on PROJS.* to gnuser@localhost identified by '1234';
+mkdir data
+chmod 707 data
+
+
+http://192.168.80.110/gb/adm/boardgroup_list.php
+
+설정 및 로그인
+admin
+1234
+오른쪽 맨위 관리자 > 왼쪽 3번째 텝에서 게시판 그룹 생성 (group1)> 게시판  생성
+> 테이블 및 게시판 제목(protable), 게시판 관리자 설정
+
+centos1)
+
+su - admin
+ls
+cd public_html/
+
+
+vi index.html
+<h1>proja1 Web Page!!!</h1>
+<a href=http://192.168.80.110/gb/bbs/board.php?bo_table=protable>프로젝트소개게시판연결</a>
+:wq
+
+
+http://192.168.80.131/~admin 하면
+링크뜸 그 링크 눌러서 아까 설정한 리눅스 실습 게시판 연결
+
+
+ - 시나리오 5
+
+
+centos2)
+yum install ftp -y
+yum install vsftpd -y
+
+
+rpm -qa | grep vsftp
+
+yum install vsftpd
+rpm -qa | grep vsftpd
+rpm -qc vsftpd.x86_64 0:3.0.2-27.el7
+cd /etc/vsftpd
+vi vsftpd.conf
+
+중앙에 
+local_enable=YES를
+local_enable=NO로 바꿔줌
+systemctl start vsftpd
+systemctl enable vsftpd 이건 부팅하면서 자동으로 생성하도록 만든것
+systemctl status vsftpd 상태 확인
+netstat -an | grep :21
+firewall-cmd --list-all
+
+firewall-cmd --add-service=ftp
+                --add-port=21/tcp 둘중 하나 입력
+
+passwd projb1
+1234
+1234
+
+cd /etc/vsftpd/
+ls
+
+vi ftpusers
+# root
+# projb1
+:wq
+
+vi user_list
+# root
+# projb1
+:wq
+
+알ftp)
+서버 연결 192.168.80.120 / passwd : 1234
+
+윈도우cmd)
+ftp 192.168.80.120
+projb1
+1234
+ls
+
+이후 윈도우에서 me.txt파일을 생성 후 알 ftp를 활용해 윈도우에 있는 me.txt파일 
+projb1로 업로드
+
+ - 시나리오 6
+
+centos1,2)
+cd /home
+
+mkdir ProjShare
