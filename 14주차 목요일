@@ -1,0 +1,104 @@
+VMware 설치
+
+file > New Virtual Machine > custom > install disc image file (centos-7-86_64)적용>
+Virtual machine name 설정 > 프로세스 설정 > 메모리 설정 > 네트워크 타입(NAT)설정 >
+SCSI (logic)설정 > Disk type SCSI 설정 > Disk (new virtual disk) > Maximum disk size설정>
+디스크 파일 저장할 곳 설정 > Finish
+
+시작 되면
+install centos 7 선택
+
+언어 - 한국어 > software 서버 gui 설정 > system installation destination 디스크 설정>
+네트워크 ens33 on > root 암호 설정 > 사용자 생성 > 재부팅 > 라이센스 동의 > 실행 >
+언어 입력 한국어(Hangul) 설정 > 개인정보 끔 > 계정 연결 건너뛰기 > 리눅스 시작 > 
+네트워크 설정 ip 입력 (centos1 = 192.168.80.110 / 24, gw = 192.168.80.2)
+                            (centos2 = 192.168.80.120 / 24, gw = 192.168.80.2)
+
+
+
+centos1, 2)
+systemctl restart network
+ping 1.1.1.1
+
+리눅스1 하드웨어 : RAM 1G, Disk1 20G, Disk2 5G
+리눅스1 소프트웨어: SSH서버, 웹 서버 MariaDB 서버, NFS 서버, 삼바 서버 및 클라이언트
+
+리눅스2 하드웨어 : RAM 1G, Disk1 20G
+리눅스2 소프트웨어: SSH서버, FTP 서버, NFS 서버, 삼바 서버 및 클라이언트
+
+윈도우 하드웨어 : RAM 8G, Disk 여유공간 100G
+윈도우 소프트웨어: SSH클라이언트, FTP 클라이언트, 웹 브라우저, 삼바
+
+centos1)
+fdisk -l
+fdisk /dev/sdb
+n
+p
+enter
+enter
+enter
+하나로 다 잡아줌
+w
+
+mkfs.xfs /dev/sdb1
+
+mkdir /nfs
+mount /dev/sdb1 /nfs
+mount | grep "sdb1"
+vi /etc/fstab
+/dev/sdb1/              /nfs                    xfs     defaults        0 0
+:wq
+mount -a
+mount
+
+윈도우 putty > 192.168.80.110 > Centos1 생성 > open > admin1 / qwer1234
+
+사용자 생성
+centos1)
+su -
+qwer1234
+
+cd /home
+mkdir ProjA
+groupadd ProjA
+cd ~
+useradd -g ProjA -m -d /home/ProjA/proja1 proja1
+useradd -g ProjA -m -d /home/ProjA/proja2 proja2
+useradd -g ProjA -m -d /home/ProjA/proja3 proja3
+useradd -g ProjA -m -d /home/ProjA/market market
+
+centes2)
+su -
+qwer1234
+
+cd /home
+mkdir ProjB
+groupadd ProjB
+cd ~
+useradd -g ProjB -m -d /home/ProjB/projb1 projb1
+useradd -g ProjB -m -d /home/ProjB/projb2 projb2
+useradd -g ProjB -m -d /home/ProjB/projb3 projb3
+
+
+디스크 쿼터 1G
+ - xfs 파일시스템에 quota 설정하기 (proja1,2,3 / projb1,2,3)
+/etc/fstab
+/dev/sdb1	/nfs	xfs	defaults,uquota	0 0
+umount -a
+mount -a
+df -Th
+xfs_quota -x /nfs
+state      =>    xfs 상태 확인
+report -h   => xfs 설정 확인
+limit bsoft-1000m bhard-1100m proja1   => proja1 사용자는 /nfs 디렉토리에 1G까지 
+                                                         쓸 수 있고 1G를 넘어가면 1.1까지는
+					쓸수있지만 이를 초과한 데이터는
+					grace기간(7일)이 지나면 삭제됨
+report -h -u  => xfs 설정 확인
+quit
+
+ls /sys/class/scsi_host/
+host0 host1 host2
+echo "- - -" > /sys/class/scsi_host/host0/scan
+echo "- - -" > /sys/class/scsi_host/host1/scan
+echo "- - -" > /sys/class/scsi_host/host2/scan
