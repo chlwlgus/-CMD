@@ -1,0 +1,143 @@
+NMS(Network Manager System)
+ - opennms 설치
+
+cat 00-installer-config.yaml
+vi /etc/netplan/00-installer-config.yaml 
+dhcp yes로 바꿔주기
+
+apt -y update && upgrade
+apt -y upgrade
+
+apt install openjdk-11-jdk
+y
+
+wget https://github.com/opennms-forge/opennms-install/archive/master.zip
+unzip master.zip
+cd opennms-install-master/
+bash bootstrap-debian.sh
+admin
+qwer1234
+ok
+local only hostes
+ok
+ok
+
+/usr/share/opennms/bin/install -dis
+
+
+echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> /etc/default/opennms
+
+systemctl restart opennms
+
+netstat -an | grep :8980
+
+다 설치 후 192.168.102.218 ubuntu주소로 열고
+네트워크 vmnet5로 바꾸기
+
+netplan apply
+ifconfig
+
+=======
+centos vmnet3으로 바꿔주고 
+아래 gns 설정후 ubuntu랑 네트워크 연결 확인하기
+
+ubuntu)
+route add default gw 192.168.50.253
+
+GNS)
+
+conf t
+
+int f0/0
+ip add 192.168.50.253 255.255.255.0
+no sh
+
+int f0/1
+ip add 192.168.30.253 255.255.255.0
+no sh
+
+설정 후
+
+서로에게 ping 가는지 확인
+ping 192.168.30.130
+ping 192.168.50.129
+
+
+GNS)
+
+snmp-server host 192.168.50.129  public
+                       ________________
+                           ubuntu ip
+snmp-server community public ro
+
+설정하고 opennms 브라우저에
+
+오른쪽 맨위 톱니바퀴 설정 > Provisioning >
+Configure SNMP Community Names by IP Address>
+ip address : ubuntu gw 192.168.50.253>look up>save config>
+오른쪽 맨위+ 누르고 admin 하고 위에 팝업 ok>
+requisition : admin / ipaddress 192.168.50.253 / node label : R1>provision
+
+
+GNS)
+R1에 슬롯 nm-1fe-tx 추가하고
+nat구름이랑 R1연결
+int f2/0
+ip add dhcp
+no sh
+
+centos)
+yum install net-snmp* -y
+
+yum clean all
+
+vi /etc/snmp/snmpd.conf
+systemctl start snmpd
+snmpwalk -v 2c -c public localhost
+
+firewall-cmd --permanent --add-service=snmp
+firewall-cmd --reload
+
+opennms 오른쪽 위에 +> admin2 > 192.168.30.130>centos>provision
+
+netstat -an | grep :161
+
+ubuntu)
+apt-install mariadb-server
+
+coentos)
+yum install mariadb-server
+
+
+systemctl start mariadb
+netstat -an | grep :3306
+
+mysql -u root -p   = 마리아 db 접속
+passwd 없음  걍 enter 누르면 됨
+
+
+DDL(Database Definition Language)
+DML(Database Manaputation Language)
+DCL(Database Control Language)
+
+show databases;
+use mysql
+show tables;
+use test
+create table st_info(ST_ID int, NAME varchar(20), DEPT varchar(25));
+show tables;
+desc st_info; = 해당 테이블에 대한 상태 정보 출력
+explain st_info; = 해당 테이블에 대한 상태 정보 출력
+
+기본 키 추가
+alter table st_info add constraint pk_stinfo primary key (st_ID);
+insert into st_info values (101, '최지현', 'network');
+insert into st_info values (102, '홍길동', 'security');
+update st_info set NAME='최지현' where ST_ID=102;
+select*from st_info;
+delete from st_info where ST_ID=101;
+
+insert C
+select R
+update U
+delete D
