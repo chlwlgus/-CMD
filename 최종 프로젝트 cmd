@@ -1,0 +1,929 @@
+DSW1)==================================================
+en
+conf t
+
+vlan 10
+vlan 20
+vlan 30
+vlan 40
+
+int g0/0
+no sw
+ip add 192.168.50.1 255.255.255.0
+no sh
+
+int ran g0/1-2
+channel-group 10 mode desirable
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+int port-channel 10
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+
+int ran g0/3, g1/0
+channel-group 11 mode desirable
+switchport access vlan 10
+switchport mode access
+
+int port-channel 11
+switchport mode access
+switchport access vlan 10
+
+int ran g1/1-2
+channel-group 12 mode desirable
+switchport mode access
+switchport access vlan 20
+
+int port-channel 12
+switchport mode access
+switchport access vlan 20
+
+int ran g1/3, g2/0
+channel-group 13 mode desirable
+switchport mode access
+switchport access vlan 30
+
+int port-channel 13
+switchport mode access
+switchport access vlan 30
+
+int ran g2/1-2
+channel-group 14 mode desirable
+switchport mode access
+switchport access vlan 40
+
+int port-channel 14
+switchport mode access
+switchport access vlan 40
+
+int vlan 10
+ip add 192.168.10.254 255.255.255.0
+vrrp 10 ip 192.168.10.252
+vrrp 10 priority 250
+vrrp 10 preempt delay minimum 30
+vrrp 10 timer advertise msec 500
+vrrp 10 track 1 decrement 200
+no sh
+
+int vlan 20
+ip add 192.168.20.254 255.255.255.0
+vrrp 20 ip 192.168.20.252
+vrrp 20 priority 250
+vrrp 20 preempt delay minimum 30
+vrrp 20 timer advertise msec 500
+vrrp 20 track 1 decrement 200
+no sh
+
+int vlan 30
+ip add 192.168.30.254 255.255.255.0
+vrrp 30 ip 192.168.30.252
+vrrp 30 priority 100
+vrrp 30 timers learn 
+
+int vlan 40
+ip add 192.168.40.254 255.255.255.0
+vrrp 40 ip 192.168.40.252
+vrrp 40 priority 100
+vrrp 40 timers learn 
+
+spanning-tree vlan 10 root primary
+spanning-tree vlan 20 root primary
+spanning-tree vlan 30 root secondary
+spanning-tree vlan 40 root secondary
+
+
+
+
+
+DSW2)==================================================
+en
+conf t
+
+vlan10
+vlan20
+vlan30
+vlan40
+
+int g0/0
+no sw
+ip add 192.168.50.2 255.255.255.0
+no sh
+
+int ran g0/1-2
+channel-group 10 mode desirable
+ switchport trunk encapsulation dot1q
+ switchport mode trunk 
+
+int port-channel 10
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+int ran g1/3, g2/0
+channel-group 22 mode desirable
+switchport access vlan 20
+switchport mode access
+
+interface Port-channel22
+switchport access vlan 20
+switchport mode access
+
+int ran g2/1-2
+channel-group 21 mode desirable
+switchport access vlan 10
+switchport mode access
+
+interface Port-channel21
+switchport access vlan 10
+switchport mode access
+
+int ran g1/1-2
+channel-group 23 mode desirable
+switchport access vlan 30
+switchport mode access
+
+interface Port-channel23
+switchport access vlan 30
+switchport mode access
+
+int ran g0/3, g1/0
+channel-group 24 mode desirable
+switchport access vlan 40
+switchport mode access
+
+interface Port-channel24
+switchport access vlan 40
+switchport mode access
+
+
+int vlan 10
+ip address 192.168.10.253 255.255.255.0
+vrrp 10 ip 192.168.10.252
+vrrp 10 priority 100
+vrrp 10 timers learn
+
+int vlan 20
+ip address 192.168.20.253 255.255.255.0
+vrrp 20 ip 192.168.20.252
+vrrp 20 priority 100
+vrrp 20 timers learn
+
+int vlan 30
+ip address 192.168.30.253 255.255.255.0
+vrrp 30 ip 192.168.30.252
+vrrp 30 priority 250
+vrrp 30 preempt delay minimum 30
+vrrp 30 timer advertise msec 500
+vrrp 30 track 1 decrement 200
+no sh
+
+int vlan 40
+ip address 192.168.40.253 255.255.255.0
+vrrp 40 ip 192.168.40.252
+vrrp 40 priority 250
+vrrp 40 preempt delay minimum 30
+vrrp 40 timer advertise msec 500
+vrrp 40 track 1 decrement 200
+no sh
+
+
+spanning-tree vlan 30 root primary
+spanning-tree vlan 40 root primary
+spanning-tree vlan 10 root secondary
+spanning-tree vlan 20 root secondary
+
+
+
+IOS1)==================================================
+en
+conf t
+vlan 10
+int vlan 10
+
+int ran g0/3, g1/0
+channel-group 11 mode auto
+switchport access vlan 10
+switchport mode access
+
+interface Port-channel11
+ switchport access vlan 10
+ switchport mode access
+
+interface Port-channel21
+ switchport access vlan 10
+ switchport mode access
+
+int ran g2/1-2
+channel-group 21 mode desirable
+switchport access vlan 10
+switchport mode access
+
+int g3/0
+switchport mode access
+switchport access vlan 10
+no sh
+exit
+
+IOS2)==================================================
+en
+conf t
+
+vlan 20
+int vlan 20
+
+int ran g1/1-2
+channel-group 12 mode desirable
+switchport access vlan 20
+switchport mode access
+
+int port-channel 12
+switchport mode access
+switchport access vlan 20
+
+int ran g1/3, g2/0
+channel-group 22 mode desirable
+switchport access vlan 20
+switchport mode access
+
+int port-channel 22
+switchport mode access
+switchport access vlan 20
+
+int g3/0
+switchport mode access
+switchport access vlan 20
+no sh
+exit
+
+IOS3)==================================================
+en
+conf t
+
+vlan 30
+int vlan 30
+
+int ran g1/3, g2/0
+channel-group 13 mode desirable
+switchport mode access
+switchport access vlan 30
+
+int port-channel 13
+switchport mode access
+switchport access vlan 30
+
+int ran g1/1-2
+channel-group 23 mode desirable
+switchport access vlan 30
+switchport mode access
+
+interface Port-channel23
+switchport access vlan 30
+switchport mode access
+
+int g3/0
+switchport mode access
+switchport access vlan 30
+no sh
+exit
+
+IOS4)==================================================
+en
+conf t
+
+vlan 40
+int vlan 40
+
+int ran g2/1-2
+channel-group 14 mode desirable
+switchport mode access
+switchport access vlan 40
+
+int port-channel 14
+switchport mode access
+switchport access vlan 40
+
+int ran g0/3, g1/0
+channel-group 24 mode desirable
+switchport access vlan 40
+switchport mode access
+
+interface Port-channel24
+switchport access vlan 40
+switchport mode access
+
+int g3/0
+switchport mode access
+switchport access vlan 40
+no sh
+exit
+
+
+pfsense1)==================================================
+
+em0 (라우터랑 연결되는 부분)
+2
+1
+n
+2.2.13.2
+24
+2.2.13.1
+
+em1)(DSW1이랑 연결되는 부분)
+
+2
+2
+n
+192.168.50.252
+enter
+enter
+enter
+
+R1)===========================================
+conf t
+
+int f0/0
+ip add 2.2.12.1 255.255.255.0
+no sh
+
+int f0/1
+ip add 2.2.13.1 255.255.255.0
+ip nat inside
+no sh
+
+int f2/0
+ip add 192.168.20.252 255.255.255.0
+no sh
+
+int s1/3
+ip add 2.2.14.1 255.255.255.0
+ip nat outside
+no sh
+
+ip route 0.0.0.0 0.0.0.0 Serial1/3 2.2.14.3
+
+R2)===========================================
+conf t
+int f0/0
+ip add 2.2.12.2 255.255.255.0
+no sh
+
+int f0/1
+ip add 2.2.13.2 255.255.255.0
+no sh
+
+int s1/2
+ip add 2.2.14.2 255.255.255.0
+no sh
+
+ip route 0.0.0.0 0.0.0.0 Serial1/2 2.2.14.4
+
+R5) 
+int s1/3
+ip add 2.2.14.3 255.255.255.0
+no sh
+
+int s1/2
+ip add 2.2.14.4 255.255.255.0
+no sh
+
+int f0/0
+ip add dhcp
+no sh
+
+
+ip route 192.168.20.0 255.255.255.0 Serial1/3 2.2.14.1
+
+
+
+===========================
+pfsense)
+
+내부 Lan 설정
+192.168.50.253
+
+외부 Wan 설정
+2.2.13.1
+
+firewall nat 설정
+add
+192.168.10.0
+192.168.20.0
+192.168.30.0
+192.168.40.0
+192.168.50.0
+
+================================
+ASA)
+en
+copy disk0:/coredumpinfo/coredump.cfg disk0:/use_ttyS0
+ASA스탑 후 설정을 vpn에서 telnet으로 변환 후 SRT로 ASA접속
+
+en
+conf t
+a
+hostname ASA
+
+int g0/0
+nameif outside
+security-level 0
+ip add 192.168.20.253 255.255.255.0
+no sh
+
+int g0/1
+nameif inside
+security-level 100
+ip add 192.168.5.254 255.255.255.0
+no sh
+
+access-list 1 standard permit 192.168.20.0 255.255.255.0 
+access-list 1 standard deny any4 
+
+route Outside 0.0.0.0 0.0.0.0 192.168.20.252
+
+SVR1)===========================================
+conf t
+host SVR1
+
+int f0/0
+ip add 192.168.5.100 255.255.255.0
+no sh
+
+SVR2)===========================================
+conf t
+host SVR1
+
+int f0/0
+ip add 192.168.5.200 255.255.255.0
+no sh
+
+========================================
+메일 서버
+
+CentOS 서버)
+
+yum install postfix
+yum install dovecot
+yum install bind
+
+
+ -DNS 서버 세팅 
+
+vi /etc/named.con          
+ 
+13         listen-on port 53 { 192.168.20.100; };
+:wq
+
+systemctl start named
+systemctl status named
+systemctl enable named.service 
+
+vi /etc/named.conf
+     21         allow-query     { any; };  
+:wq
+
+systemctl restart named
+service named restart 
+
+cd /var/named
+vi gdn9.zone
+$TTL 86400
+@       IN SOA ns       admin (   
+                        20201207
+                        1H      
+                        3H        
+                        1W      
+                        1D )    
+
+        IN NS   ns 
+        IN MX  10 mail  
+ns      IN A    192.168.20.100
+WWW     IN A    192.168.20.100
+mail    IN A    192.168.20.100
+:wq
+
+vi /etc/named.rfc1912.zones   
+
+zone "gdn9.com" IN {
+        type master;
+        file "gdn9.zone";
+        allow-update { none; };
+};
+:wq
+
+systemctl restart named
+
+
+ - 메일 서버 설치 
+
+postconf -e 'myhostname = mail.gdn9.com'
+postconf -e 'mydomain = gdn9.com'
+postconf -e 'myorigin = $mydomain'
+postconf -e 'inet_interfaces = all'
+postconf -e 'inet_protocols = ipv4'
+postconf -e 'mydestination = $mydomain,localhost.$mydomain,localhost,$mydomain,/etc/postfix/local-host-names'
+touch /etc/postfix/local-host-names
+postconf -e 'smtpd_sasl_type = dovecot'
+postconf -e 'smtpd_sasl_path = private/auth'
+postconf -e 'smtpd_sasl_auth_enable = yes'
+postconf -e 'smtpd_sasl_security_options = noanonymous'
+postconf -e 'smtpd_sasl_local_domain = $myhostname'
+postconf -e 'smtpd_client_restrictions = permit_mynetworks,permit'
+postconf -e 'smtpd_recipient_restrictions = permit_mynetworks,permit_auth_destination,permit_sasl_authenticated,reject'
+
+vi /etc/dovecot/dovecot.conf
+-프로토콜 설정
+ 24 #protocols = imap pop3 lmtp   =>  protocols = imap pop3
+-리스닝 인터페이스 설정
+ 30 #listen = *, ::  => listen = *
+
+-비밀번호 인증 설정
+vi /etc/dovecot/conf.d/10-auth.conf
+ 10 #disable_plaintext_auth = yes => disable_plaintext_auth = no
+ 100 auth_mechanisms = plain => auth_mechanisms = plain login
+
+-메일박스 위치 변경
+vi /etc/dovecot/conf.d/10-mail.conf
+ 30 #mail_location  => mail_location = mbox:/var/empty:INBOX=/var/spool/mail/%u:INDEX=MEMORY
+
+-SMTP 인증 설정
+vi /etc/dovecot/conf.d/10-master.conf
+     89   unix_listener auth-userdb {
+     90     #mode = 0666
+     91     #user =
+     92     #group =
+     93   }
+     94
+     95   # Postfix smtp-auth
+     96   unix_listener /var/spool/postfix/private/auth {
+     97    mode = 0666
+     98    user = postfix
+     99    group = postfix
+    100 }  
+:wq
+
+
+vi /etc/dovecot/conf.d/10-ssl.conf
+ 8 ssl = no
+:wq
+
+systemctl start postfix dovecot
+firewall-cmd --permanent --add-service={smtp,pop3,imap}
+firewall-cmd --reload
+
+yum install telnet
+yum install telnet-server
+systemctl restart telnet.socket
+
+vi /etc/resolv.conf
+nameserver 192.168.20.100
+:wq
+
+telnet localhost 110   
+user admin
+pass qwer1234
+quit
+
+systemctl restart telnet.socket
+
+telnet localhost 25
+ehlo sunny.com
+auth login
+ 334 VXNlcm5hbWU6
+YWRtaW4=           // admin
+ 334 UGFzc3dvcmQ6
+cXdlcjEyMzQ=       // qwer1234
+quit
+
+firewall-cmd --permanent --add-service=dns
+firewall-cmd --reload
+
+systemctl restart named
+nslookup mail.gdn9.com
+
+
+============
+ - ubuntu 선더버드 메일 설정
+
+Ubuntu)
+sudo passwd root
+qwer1234
+
+
+cd /etc/netplan
+sudo vi 00-installer-config.yaml
+network:
+  ethernets:
+    ens33:
+      dhcp4: no
+      addresses: [192.168.20.110/24]
+      gateway4: 192.168.20.252
+      nameservers:
+              addresses:[8.8.8.8,8.8.4.4]
+  version: 2
+:wq
+                      
+sudo netplan apply
+
+
+vi /etc/resolv.conf
+ 17 nameserver 192.168.20.100
+:wq
+
+--
+
+Ubuntu Thunderbird 들어가서 Advanced config
+admin3
+admin3@gdn9.com
+qwer1234
+
+IMAP mail.gdn9.com
+        mail.gdn9.com
+Re-test 누르고 포트가 143,25로 바뀌면 성공한 것.
+
+
+
+AAA 서버===========================================
+
+yum install freeradius freeradius-utils
+systemctl start radiusd
+systemctl enable radiusd
+grep radius /etc/services
+
+firewall-cmd --add-service=radius --permanent
+firewall-cmd --reload
+systemctl restart radiusd
+
+cd /etc/raddb
+vi clients.conf       // 맨밑에
+client R1 {
+	ipaddr = 192.168.20.252
+	secret = cisco123
+}
+:wq
+
+vi users              // 맨위에
+admin1 Cleartext-Password := "cisco"
+	Reply-Message := "Hello, %{User-Name}",
+	Service-Type = Shell-User,
+	cisco-avpair = "shell:priv-lvl=15"
+
+$enab15$	Cleartext-Password := "cisco123"
+		Service-Type = Shell-User
+:wq
+
+systemctl restart radiusd
+systemctl status radiusd
+
+
+R1)===========================================
+ping 192.168.20.100
+
+aaa new-model
+aaa authentication login default group radius
+aaa authentication login con-auth group radius local
+aaa authentication enable default group radius
+aaa authorization exec default group radius 
+
+line con 0
+login authentication con-auth
+
+line vty 0 4    
+login authentication default   
+
+username user1 pass cisco
+radius-server host 192.168.20.100 auth-port 1812 acct-port 1813 key cisco123
+
+end
+test aaa group radius admin1 cisco legacy 
+
+SW5-R1 쪽 Wireshark 캡처 하고
+
+Win10 cmd, centos 등에서
+telnet 192.168.20.252
+admin1
+cisco
+
+
+
+===========================
+웹 페이지 서버
+
+
+게시판 서버
+
+yum install httpd php php-mysql php-gd -y
+systemctl start httpd
+systemctl enable httpd
+
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+
+systemctl start httpd
+
+Win10)
+192.168.20.100          // 테스트 페이지 떠야함
+
+cd /var/www/html
+ls
+cat > index.html
+GDN9 Web Server Page!!!
+
+/etc/httpd/conf/httpd.conf    >   설정 파일
+vi index.html
+
+<html>
+<head>
+<title>
+html tes
+</title>
+</head>
+<body>
+My First Web Page!!!
+</body>
+</html>
+:wq
+
+192.168.20.100/log       // 접속 가능
+
+
+cd /etc/httpd/conf.d
+vi userdir.conf
+     17     #UserDir disabled
+     24     UserDir public_html
+
+그리고 맨밑에 5줄 복사(5yy)해서
+그밑에 똑같이 붙여넣기(p)
+
+su - admin
+mkdir public_html
+chmod 701 .
+chmod 701 public_html
+cp /var/www/html/index.html .
+ls
+mv index.html public_html/
+cd public_html
+
+
+systemctl restart httpd
+
+su -
+cd /var/www/html
+vi phpinfo.php  // 들어가서
+GDN9 Web Server Page!!!
+:wq
+
+vi /etc/sysconfig/selinux   // 들어가서
+SELINUX=disabled
+setenforce 0
+
+http://192.168.20.100/~admin/           // 접속 가능해짐
+
+systemctl restart httpd
+
+cd /var/www/html/
+mkdir gb
+cd gb
+
+yum install ftp -y
+
+ftp 192.168.100.101 
+anonymous        
+bin
+mget gnuboard5.4.3.tar.gz
+bye
+
+tar -xf gnuboard5.4.3.tar.gz
+
+yum install php php-gd php-mysqlnd -y
+yum install mysql
+yum install mariadb-server
+systemctl restart httpd mariadb
+
+mysql -u root -p
+create database gnu;
+grant all privileges on gnu.* to gnuser@localhost identified by '1234';
+
+http://192.168.20.100/gb/           
+
+cd /var/www/html/gb
+mkdir data
+chmod 707 data
+
+vi /home/admin/public_html/index.html
+<html>
+<head>
+<title> GDN9 Web Server Page!!! </title>
+</head>
+<body>GDN9 Web Server Page!!! </body>
+<a href=http://192.168.20.100/gb/bbs/board.php?bo_table=linux_GDN9>GDN9 Web Server Page!!!</a>
+</html>
+
+systemctl restart httpd
+
+http://192.168.20.100/gb/ 
+
+
+
+OwnCloud=============================
+
+owncloud 패키지 설치
+rpm --import https://download.owncloud.org/download/repositories/production/CentOS_7/repodata/repomd.xml.key
+
+wget http://download.owncloud.org/download/repositories/production/CentOS_7/ce:stable.repo -O /etc/yum.repos.d/ce:stable.repo
+
+yum clean all
+
+yum install owncloud-complete-files
+yum upgrade owncloud-complete-files
+
+-- php 7.4 설치
+yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum -y install epel-release yum-utils
+yum-config-manager --disable remi-php54 && sudo yum-config-manager --enable remi-php74
+yum install -y php
+php -v
+yum install php-fpm -y
+yum -y install php-cli php-redis php-brotli php-intl php-gd php-gmp php-imap php-bcmath php-interbase php-json php-mbstring php-mysqlnd php-odbc php-opcache php-memcached php-tidy php-pdo php-pdo-dblib php-pear php-pgsql php-process php-pecl-apcu php-pecl-geoip php-pecl-imagick php-pecl-hrtime php-pecl-json php-pecl-memcache php-pecl-mongodb php-pecl-rar php-pecl-pq php-pecl-redis4 php-pecl-yaml php-pecl-zip
+
+
+vi /etc/php.ini
+upload_max_filesize = 8G 변경
+
+-- apache 설치
+yum install httpd
+
+-- mariadb 10.5 설치
+vi /etc/yum.repos.d/maria.repo
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.5/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+
+yum install MariaDB*
+cd /etc/my.cnf.d/
+
+vi client.cnf 
+[client]
+default-character-set=utf8
+
+vi mysql-clients.cnf 
+[mysql]
+default-character-set=utf8
+
+[mysqldump]
+default-character-set=utf8
+
+vi server.cnf 
+[mysqld]
+character-set-server=utf8
+
+systemctl restart mariadb
+
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+
+-- owncloud 에서 사용할 DB 생성, 사용자 생성
+mysql -u root -p
+create database ownclouddb; 
+grant all privileges on ownclouddb.* to 'owncloud'@localhost identified by 'P@ssw0rd';
+
+-- 웹브라우저로 접속하기 위한 설정: http://192.168.20.100/oc
+
+vi /etc/httpd/conf.d/owncloud.conf
+Alias /oc "/var/www/html/owncloud/"
+
+<Directory /var/www/html/owncloud/>
+Options +FollowSymlinks
+AllowOverride All
+
+<IfModule mod_dav.c>
+Dav off
+</IfModule>
+
+SetEnv HOME /var/www/html/owncloud
+SetEnv HTTP_HOME /var/www/html/owncloud
+
+</Directory> 
+
+systemctl restart httpd
+
+setenforce 0
+
+
+접속 : http://192.168.20.100/oc
+
+
+cd /var/www/html/owncloud/config/
+ls
+vi config.php
+    0 => '192.168.20.100', '192.168.103.28'
+                                  --------------- 모바일로 접속할 주소(회사 와이파이ip와 같아야함)
+
+admin
+1234
+로 계정 생성
+
+
+모바일 접속시 http://192.168.103.28/oc   로 접속
