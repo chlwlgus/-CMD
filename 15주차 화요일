@@ -1,0 +1,317 @@
+R6)
+router ospf 2
+no area 68 nssa no-summary 
+no area 68 nssa
+do sh run | s r o
+
+router ospf 1
+no area 67 nssa no-summary
+
+R8)
+router ospf 1 
+no area 68 nssa
+
+R7)
+do sh ip ro
+O*N2 0.0.0.0/0 [110/1] via 2.2.67.6, 00:00:05, Serial1/0
+
+R11)
+conf t
+int f0/0
+ip add dhcp
+no sh
+
+R1에 R11로 향하는 기본 경로 설정
+R1)
+conf t
+ip route 0.0.0.0 0.0.0.0 s1/3 4.4.111.11
+
+do ping 1.1.1.1
+do ping 8.8.8.8
+
+R1)
+router ospf 1
+default-information originate
+default-information originate always
+
+R5)
+do ping 8.8.8.8
+
+R1)
+int s1/0
+ip ospf authentication message-digest  =>  Neighbor (interface)인증 활성화
+ip ospf message-digest-key 10 md5 cisco
+
+R2)
+int s1/0
+ip ospf authentication message-digest
+
+R3)
+conf t
+router ospf 1
+area 번호 authentication message-digest
+
+int f0/0
+ip ospf message-digest-key 키 번호 md5 패스워드
+
+R5)
+conf t
+router ospf 1
+area 356 authentication message-digest
+int f0/0
+ip ospf message-digest-key 20 md5 cisco123
+
+R6)
+conf t
+router ospf 1
+area 356 authentication message-digest
+int f0/0
+ip ospf message-digest-key 20 md5 cisco123
+
+R2)
+sh ip ospf int s1/0 하면 
+Youngest key id is 10 이렇게 키 번호가 뜬다.
+
+
+R1)
+int s1/0
+ip ospf message-digest-key 15 md5 goodee
+
+R2)
+int s1/0
+ip ospf message-digest-key 15 md5 goodee
+
+R1)
+conf t
+router ospf 1
+area 0 authentication message-digest
+int s1/0
+no ip ospf authentication message-digest
+ip ospf message-digest-key 10 md5 cisco
+ip ospf message-digest-key 15 md5 goodee
+
+int s1/1
+ip ospf message-digest-key 15 md5 goodee
+
+R2)
+conf t
+router ospf 1
+area 0 authentication message-digest
+int s1/0
+no ip ospf authentication message-digest
+ip ospf message-digest-key 10 md5 cisco
+ip ospf message-digest-key 15 md5 goodee
+
+R3)
+int s1/1
+ip ospf message-digest-key 15 md5 goodee
+router ospf 1
+area 0 authentication message-digest
+
+do sh ip os nei
+do sh run | s r o
+no area 356 authentication message-digest
+do sh run | s r o
+no area 356 virtual-link 6.6.6.6
+area 356 virtual-link 6.6.6.6
+
+R3)
+router ospf 1
+area 356 virtual-link 6.6.6.6 message-digest-key 1 md5 cisco
+
+R6)
+router ospf 1
+area 356 virtual-link 3.3.3.3 authentication message-digest
+area 356 virtual-link 3.3.3.3 message-digest-key 1 md5 cisco
+
+R9)
+
+int lo 0
+ip add 172.16.19.9 255.255.255.0
+
+int lo 1
+ip add 172.16.20.9 255.255.255.0
+
+int lo 2
+ip add 172.16.21.9 255.255.255.0
+
+int lo 3
+ip add 172.16.22.9 255.255.255.0
+
+router rip
+network 172.16.0.0
+no auto-summary
+
+R4)
+
+access-list 4 permit 172.16.20.0 0.0.0.255
+access-list 4 permit 172.16.22.0 0.0.0.255
+
+route-map redi4 deny 10
+match ip address 4
+
+route-map redi4 permit 20
+
+router ospf 1
+redistribute rip metric 1 subnets route-map redi4
+
+access-list 4 deny 172.16.20.0 0.0.0.255
+access-list 4 deny 172.16.22.0 0.0.0.255
+access-list 4 permit 172.16.19.0 0.0.0.255
+access-list 4 permit 172.16.21.0 0.0.0.255
+
+route-map redi4 permit 10
+match ip address 4
+
+route-map redi4 permit 20 
+이렇게 하면 차단 하고싶은게 차단이 안되고 다들어온다.
+이런식으로 하려면 
+
+access-list 4 deny 172.16.20.0 0.0.0.255
+access-list 4 deny 172.16.22.0 0.0.0.255
+access-list 4 permit 172.16.19.0 0.0.0.255
+access-list 4 permit 172.16.21.0 0.0.0.255
+access-list 4 permit 3.3.49.0 0.0.0.255
+
+route-map redi4 permit 10
+match ip address 4
+
+R6)
+router ospf 1
+no network 2.2.67.6 0.0.0.0 area 67
+
+ip route 3.3.0.0 255.255.0.0 s1/0 2.2.67.7
+
+R7)
+no router ospf 1
+no router eigrp 170
+
+int s1/2
+ip add 3.3.127.7 255.255.255.0
+no sh
+
+ip route 0.0.0.0 0.0.0.0 s1/2 2.2.67.6
+
+R10)
+no router eigrp 170
+ip route 0.0.0.0 0.0.0.0 s1/1 3.3.170.7
+
+R12)
+ip route 0.0.0.0 0.0.0.0 s1/2 3.3.127.7
+int lo0
+ip add 
+
+int s1/2
+ip add 3.3.127.12 255.255.255.0
+no sh
+===========================
+-mgre, nhrp 생성
+
+R6(hub), R10,12(spoke)에 mGRE 설정
+mGRE 네트워크 : 10.10.123.0/24
+R6(.1) R10(.2), R12(.3)
+R6) ping 10.10.123.2
+     ping 10.10.123.3
+
+
+R6)
+int tun 6
+ip add 10.10.123.1 255.255.255.0
+tunnel source 2.2.67.6
+tunnel mode gre multipoint
+tunnel key 1
+
+ip nhrp network-id 1
+ip nhrp map multicast dynamic
+ip nhrp holdtime 600
+
+R10)
+int tun 10
+ip add 10.10.123.2 255.255.255.0
+tunnel source 3.3.170.10
+tunnel mode gre multipoint
+tunnel key 1
+
+ip nhrp network-id 1
+ip nhrp nhs 10.10.123.1
+ip nhrp map multicast 2.2.67.6
+ip nhrp map 10.10.123.1 2.2.67.6
+ip nhrp registration timeout 60
+
+
+
+R12)
+int tun 12
+ip add 10.10.123.3 255.255.255.0
+tunnel source 3.3.127.12
+tunnel mode gre multipoint
+tunnel key 1
+
+ip nhrp network-id 1
+ip nhrp nhs 10.10.123.1
+ip nhrp map multicast 2.2.67.6
+ip nhrp map 10.10.123.1 2.2.67.6
+ip nhrp registration timeout 60
+
+R6)
+
+router ospf 1
+network 10.10.123.0 0.0.0.255 area 123
+neighbor 10.10.123.2    =>   nbma 또는 point-to-point에서만 설정
+neighbor 10.10.123.3           유니케스트로 헬로패킷 전송
+area 123 virtual-link 6.6.6.6
+
+int tun 6
+ip ospf network non-broadcast
+ip ospf priority 255
+
+R10)
+int lo 0
+ip ospf  network point-to-point
+
+int tun 10
+ip ospf priority 0
+ip ospf network non-broadcast
+
+router ospf 1
+network 10.10.123.0 0.0.0.255 area 123
+network 10.10.10.0 0.0.0.255 area 123
+
+
+R12)
+int lo 0
+ip add 12.12.12.12 255.255.255.0
+ip ospf  network point-to-point
+
+int tun 12
+ip ospf priority 0
+ip ospf network non-broadcast
+
+router ospf 1
+network 10.10.123.0 0.0.0.255 area 123
+network 12.12.12.0 0.0.0.255 area 123
+
+=====
+R6)
+int tun 6
+ip ospf network broadcast
+
+R10)
+int tun 10
+ip ospf network broadcast
+
+R12)
+int tun 12
+ip ospf network broadcast
+=====================
+R6)
+int tun 6
+ip ospf network point-to-multipoint
+
+R10)
+int tun 10
+ip ospf network point-to-multipoint
+
+R12)
+int tun 12
+ip ospf network point-to-multipoint
