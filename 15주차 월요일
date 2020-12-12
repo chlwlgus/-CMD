@@ -1,0 +1,426 @@
+R1)========================================
+conf t
+int s1/0
+ip add 2.2.12.1 255.255.255.0
+no sh
+
+int s1/1
+ip add 2.2.13.1 255.255.255.0
+no sh
+
+int s1/3
+ip add 4.4.111.1 255.255.255.0
+no sh
+
+int lo0
+ip add 1.1.1.1 255.255.255.0
+
+router ospf 1
+net 2.2.12.1 0.0.0.0 a 0
+net 2.2.13.1 0.0.0.0 a 0
+redistribute eigrp 111 subnets
+
+router eigrp 111
+net 4.4.111.1 0.0.0.0
+redistribute ospf 1 metric 1544 2000 255 1 1500
+
+R2)========================================
+conf t
+int s1/0
+ip add 2.2.12.2 255.255.255.0
+no sh
+
+int s1/1
+ip add 2.2.24.2 255.255.255.0
+no sh
+
+router ospf 1
+net 2.2.12.2 0.0.0.0 a 0
+net 2.2.24.2 0.0.0.0 a 24
+
+R3)========================================
+conf t
+int s1/1
+ip add 2.2.13.3 255.255.255.0
+no sh
+
+int f0/0
+ip add 192.168.35.3 255.255.255.0
+no sh
+
+int lo0
+ip add 3.3.3.3 255.255.255.0
+
+router ospf 1
+network 2.2.13.3 0.0.0.0 area 0
+network 192.168.35.3 0.0.0.0 area 356
+net 3.3.3.3 0.0.0.0 a 0
+area 356 virtual-link 6.6.6.6
+R4)========================================
+conf t
+int s1/1
+ip add 2.2.24.4 255.255.255.0
+no sh
+
+int s1/2
+ip add 3.3.49.4 255.255.255.0
+no sh
+
+int lo0
+ip add 4.4.4.4 255.255.255.0
+
+
+router ospf 1
+net 2.2.24.4 0.0.0.0 a 24
+redistribute rip subnets
+
+router rip 
+ver 2
+net 3.0.0.0
+redistribute ospf 1 metric 1
+no au
+
+R5)========================================
+conf t
+int f0/0
+ip add 192.168.35.5 255.255.255.0
+no sh
+
+int lo0
+ip add 5.5.5.5 255.255.255.0
+
+router ospf 1
+net 192.168.35.5 0.0.0.0 a 356
+
+R6)========================================
+conf t
+int f0/0
+ip add 192.168.35.6 255.255.255.0
+no sh
+
+int s1/0
+ip add 2.2.67.6 255.255.255.0
+no sh
+
+int s1/3
+ip add 2.2.68.6 255.255.255.0
+no sh
+
+lo 0
+6.6.6.6 255.255.255.0
+no sh
+
+int lo0
+ip add 6.6.6.6 255.255.255.0
+
+router ospf 1
+net 192.168.35.6 0.0.0.0 a 356
+net 2.2.67.6 0.0.0.0 a 67
+net 6.6.6.6 0.0.0.0 a 356
+area 356 virtual-link 3.3.3.3
+redistribute ospf 2 subnets
+
+router ospf 2
+net 2.2.68.6 0.0.0.0 a 0
+redistribute ospf 1 subnets
+
+R7)========================================
+conf t
+int s1/0
+ip add 2.2.67.7 255.255.255.0
+no sh
+
+int s1/1
+ip add 3.3.170.7 255.255.255.0
+no sh
+
+int lo0
+ip add 7.7.7.7 255.255.255.0
+
+router ospf 1
+net 2.2.67.7 0.0.0.0 a 67
+redistribute eigrp 170 subnets
+
+router eigrp 170
+net 3.3.170.7 0.0.0.0
+redistribute ospf 1 metric 1544 2000 255 1 1500
+
+R8)========================================
+conf t
+int s1/3
+ip add 2.2.68.8 255.255.255.0
+no sh
+
+int lo0
+ip add 8.8.8.8 255.255.255.0
+
+router ospf 1
+net 2.2.68.8 0.0.0.0 a 0
+
+R9)========================================
+conf t
+int s1/2
+ip add 3.3.49.9 255.255.255.0
+no sh
+
+int lo0
+ip add 9.9.9.9 255.255.255.0
+exit
+
+router rip
+ver 2
+net 3.0.0.0
+no au
+
+R10)========================================
+conf t
+int s1/1
+ip add 3.3.170.10 255.255.255.0
+no sh
+
+int lo0
+ip add 10.10.10.10 255.255.255.0
+
+router eigrp 170
+net 3.3.170.10 0.0.0.0
+
+R11)========================================
+conf t
+int s1/3 
+ip add 4.4.111.11 255.255.255.0
+no sh
+
+int lo0
+ip add 11.11.11.11 255.255.255.0
+
+router eigrp 111
+net 4.4.111.11 0.0.0.0
+
+R3) 
+
+sh ip os int  
+conf t
+int loopback 0
+ip ospf network point-to-point 
+하면 
+
+R1)
+sh ip ro os
+하면 3.0.0.0대역이 /32에서 /24로 바뀐다.
+
+======================
+R1)
+conf t
+router ospf 1
+redistribute eigrp 111 subents metric-type 1
+
+R3)
+sh ip ro os
+고정코스트는 20인데 R1에서 타입을 바꿔주면 변동코스트가되어 수치가 바뀐다.
+타입 변동 전  O E2    4.4.111.0 [110/20] via 2.2.13.1, 00:10:18, Serial1/1
+이게 O E1    4.4.111.0 [110/84] via 2.2.13.1, 00:01:07, Serial1/1 이렇게 [] 안에 값이 바뀜
+===========================
+R11)
+router eigrp 111
+net 11.11.11.11 0.0.0.0
+no auto-summary 
+
+R1)
+sh ip ro os
+
+
+access-list 1 permit 11.11.11.0 0.0.0.255
+route-map redi permit 10
+match ip address 1
+set metric-type type-1
+
+route-map redi permit 20
+
+router ospf 1
+redistribute eigrp 111 subnets route-map redi
+
+
+R3)
+sh ip ro os
+
+=========================================
+R10)
+
+int lo1
+ip add 10.10.11.10 255.255.255.0
+
+int lo2
+ip add 10.10.12.10 255.255.255.0
+
+int lo3
+ip add 10.10.13.10 255.255.255.0
+exit
+
+router eigrp 170
+net 10.0.0.0
+no au
+
+R7)
+sh ip ro os
+
+router ospf 1
+redistribute eigrp 111 subnets route-map redi
+
+access-list 7 permit 10.10.10.0 0.0.0.255
+access-list 7 deny 10.10.11.0 0.0.0.255
+access-list 7 permit 10.10.12.0 0.0.0.255
+access-list 7 deny 10.10.13.0 0.0.0.255
+
+route-map redi7 permit 10
+                     ------------ 기본 값
+match address 7
+
+router ospf 1
+redistribute eigrp 170 subnets route-map redi7
+
+
+
+R3)
+sh ip ro os
+
+R7에서 10.10.10.0과 10.10.12.0만 허용하고 디나이 했으므로 R3에서 sh ip ro os 하면
+이 두가지만 나와야 한다.
+======================================================
+stub 계열 영역 
+=> ospf 라우터가 송수신하는 LSA를 줄여서 부하를 줄인다.
+=> stub = E(외부)정보 차단,  NSSA =  IA, E 정보 차단 
+totally stub =  E(외부)정보 차단
+=> NSSA 외부정보(E)차단, 외부정보(N)정보 유입
+                                 ----------------- 이 정보는 ASBR에서 유입
+totally NSSA : E, IA차단, N 유입
+
+ - stub, NSSA는 ABR과 내부 라우터에 모두 설정
+ - totally stub, totally nssa는 ABR에만 설정
+
+
+R2,4)
+router ospf 1
+area 24 stub
+
+이렇게 하면 R2에 sh ip ro 했을때 3.3.49.0대역이 있어야 ABR역할을 수행했다 할 수 있다.
+
+R2,R4에 do sh ip ro를 하면 R2에는 E1,2 정보가 있지만 R4는 차단하여서 없다.
+
+
+
+R2)
+area 24 nssa no-summary 
+하고 R4에서 sh ip ro 를 해보면 디폴트 게이트웨이 정보가 들어오고 IA정보는 사라진다.
+
+
+==================
+R6)
+no network 2.2.68.8 0.0.0.0 area 0
+network 2.2.68.8 0.0.0.0 area 68  
+area 68 stub no-summary 
+
+
+R8)
+do sh ip ro
+===============
+
+R6)
+router ospf 1
+area 67 stub 
+
+R7)
+
+router ospf 1
+area 67 stub 
+
+R6)
+router ospf 2
+redistribute ospf 1 subnets
+network 2.2.68.6 0.0.0.0 area 68
+
+
+R6(config-router)#do sh run | s r o          
+router ospf 1
+ log-adjacency-changes
+ area 67 nssa no-summary
+ area 356 virtual-link 3.3.3.3
+ redistribute ospf 2 subnets
+ network 2.2.67.6 0.0.0.0 area 67
+ network 6.6.6.6 0.0.0.0 area 356
+ network 192.168.35.6 0.0.0.0 area 356
+router ospf 2
+ log-adjacency-changes
+ area 68 nssa no-summary
+ redistribute ospf 1 subnets
+ network 2.2.68.6 0.0.0.0 area 68
+
+R7(config-router)#do sh run | s r o
+router ospf 1
+ log-adjacency-changes
+ area 67 nssa
+ redistribute eigrp 170 subnets route-map redi7
+ redistribute eigrp 111 subnets route-map redi
+ network 2.2.67.7 0.0.0.0 area 67
+
+
+R8(config-router)#do sh run | s r o
+router ospf 1
+ log-adjacency-changes
+ area 68 nssa
+ network 2.2.68.8 0.0.0.0 area 0
+
+
+R7)
+router ospf 1
+no redistribute eigrp 170 subnets route-map redi7
+redistribute eigrp 170 subnets 
+
+
+R5)
+int lo 0
+ip add 5.5.5.5 255.255.255.0
+
+int lo 1
+ip add 5.5.6.5 255.255.255.0
+
+int lo 2
+ip add 5.5.7.5 255.255.255.0
+
+int lo 3
+ip add 5.5.8.5 255.255.255.0
+
+
+R7에서 10.10.10.0/24 ~ 10.10.13.0/24 요약 광고
+R3과 R6에서 5.5.5.0/24 ~ 5.5.8.0/2 요약 광고
+
+
+R1에서 10.10.8.0/21
+5.5.0.0/20이 나와야 한다.
+
+
+
+R5)
+router ospf 1
+net 5.0.0.0 0.255.255.255 a 356
+
+R3)
+router ospf 1
+area 356 range 5.5.0.0 255.255.240.0
+area 356 range 10.10.0.0 255.255.248.0
+
+R7)
+router ospf 1
+summary-address 10.10.8.0 255.255.248.0
+
+
+
+access-list 77 permit 10.10.8.0 0.0.7.255
+route-map redi deny 10
+match ip address 77
+route-map redi permit 20
+router eigrp 170
+redistribute ospf 1 metric 1500 2000 255 1 1500 route-map redi
+
+이렇게 하기 전에는 R1,R10에 양쪽에 다 축약되어서 정보가 들어가는데
+이렇게 하면 R10에는 축약된 정보가 사라진다.
+(R10입장에서는 자신의 정보가 나가서 축약이되었는데 그 정보가 나한테로 다시 돌아오는 것임)
