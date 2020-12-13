@@ -1,0 +1,310 @@
+R1)
+conf t
+int lo0
+ip add 1.1.1.1 255.255.255.0
+
+int s1/0
+ip add 2.2.12.1 255.255.255.0
+no sh
+
+router bgp 100
+neighbor 2.2.12.2 remote-as 200
+
+R2)
+conf t
+int lo0
+ip add 2.2.2.2 255.255.255.0
+
+int s1/0
+ip add 2.2.12.2 255.255.255.0
+no sh
+
+int s1/1
+ip add 2.2.23.2 255.255.255.0
+no sh
+
+router ospf 1
+net 2.2.2.2 0.0.0.0 a 0
+net 2.2.23.2 0.0.0.0 a 0
+
+router bgp 200
+neighbor 2.2.12.1 remote-as 100
+neighbor 3.3.3.3 remote-as 200
+neighbor 3.3.3.3 update-source lo0
+
+R3)
+conf t
+int lo0
+ip add 3.3.3.3 255.255.255.0
+
+int s1/2
+ip add 2.2.34.3 255.255.255.0
+no sh
+
+int s1/1
+ip add 2.2.23.3 255.255.255.0
+no sh
+
+router ospf 1
+net 3.3.3.3 0.0.0.0 a 0
+net 2.2.23.3 0.0.0.0 a 0
+net 2.2.34.3 0.0.0.0 a 0
+
+router bgp 200
+neighbor 2.2.2.2 remote-as 200
+neighbor 2.2.2.2 update-source lo0
+neighbor 4.4.4.4 remote-as 200
+neighbor 4.4.4.4 update-source lo0
+
+R4)
+conf t
+int lo0
+ip add 4.4.4.4 255.255.255.0
+
+int s1/2
+ip add 2.2.34.4 255.255.255.0
+no sh
+
+int s1/3
+ip add 2.2.45.4 255.255.255.0
+no sh
+
+router ospf 1
+net 4.4.4.4 0.0.0.0 a 0
+net 2.2.34.4 0.0.0.0 a 0
+
+router bgp 200
+neighbor 3.3.3.3 remote-as 200
+neighbor 3.3.3.3 update-source lo0
+neighbor 2.2.45.5 remote-as 300
+
+R5)
+conf t
+int lo0
+ip add 5.5.5.5 255.255.255.0
+
+int s1/3
+ip add 2.2.45.5 255.255.255.0
+no sh
+
+router bgp 300
+neighbor 2.2.45.4 remote-as 200
+
+
+R2#ping 4.4.4.4 source 2.2.2.2
+R1#sh ip bgp sum
+***loopback을 neighbor로 잡는 이유는 장애를 대비하기 위해서이다.
+장비의 연결이 끊어져도 연결 가능***
+
+
+이 내용들 광고
+
+R1)
+router bgp 100
+network 1.1.1.0 mask 255.255.255.0    => sh ip ro 해서 나온 정확한 ip table값을 넣어야 한다.
+
+R5)
+router bgp 300
+network 5.5.5.0 mask 255.255.255.0
+
+이렇게 하면 R2,R4에만 R1,5의 정보가 들어오고 R3에는 안들어 온다.
+
+R2)
+router bgp 200
+neighbor 3.3.3.3 next-hop-self
+
+R4)
+router bgp 200
+neighbor 3.3.3.3 next-hop-self
+
+
+이렇게 설정을 하면 R3에 모든 정보가 들어온다.
+
+
+
+R2)
+router bgp 200
+neighbor 4.4.4.4 remote-as 200
+neighbor 4.4.4.4 update-source lo0
+neighbor 4.4.4.4 next-hop-self
+
+R4)
+router bgp 200
+neighbor 2.2.2.2 remote-as 200
+neighbor 2.2.2.2 update-source lo0
+neighbor 2.2.2.2 next-hop-self
+
+R1)
+do ping 5.5.5.5
+서로의 경로는 다 아는데 핑이 안감 그 이유는 R1의 s1/0의 정보는 없기 때문에
+소스핑으로 해주어야 한다.(loopback 정보만 알기 때문에)
+do ping 5.5.5.5 source 1.1.1.1
+
+
+R2와 R4를 광고 OSPF 타입때문에 /24가 아니고 /32가 되므로 주의해야한다.
+int lo0
+ip os network point-to-point 해주면 /24로 바뀜
+
+R2)
+int lo0
+ip os network point-to-point
+
+router bgp 200
+network 2.2.2.0 mask 255.255.255.0
+
+R4)
+int lo0
+ip os network point-to-point 
+
+router bgp 200
+network 4.4.4.0 mask 255.255.255.0
+
+이러면 모든 구간에서 서로 source ping이 간다.
+
+
+
+ - BGP 동작 원리
+BGP가 받은 전체 정보+자체 등록 정보 > BGP 최적 경로 > BGP가 전달하는 정보
+
+
+R1)
+int s1/3
+ip add 2.2.21.1 255.255.255.0
+no sh
+
+R2)
+int s1/3
+ip add 2.2.21.2 255.255.255.0
+no sh
+
+
+===============
+
+R1)
+do sh run | s r b
+
+router bgp 100
+no neighbor 2.2.12.2 remote-as 200
+neighbor 2.2.2.2 remote-as 200
+
+
+router bgp 200
+no neighbor 2.2.12.1 remote-as 100
+neighbor 1.1.1.1 remote-as 100
+
+R1)
+ip route 2.2.2.2 255.255.255.255 s1/0 2.2.12.2
+ip route 2.2.2.2 255.255.255.255 s1/3 2.2.21.2
+
+R2)
+ip route 1.1.1.1 255.255.255.255 s1/0 2.2.12.1
+ip route 1.1.1.1 255.255.255.255 s1/3 2.2.21.1
+
+
+R1)
+router bgp 100
+neighbor 2.2.2.2 update-source lo0
+neighbor 2.2.2.2 ebgp-multihop 2
+
+R2)
+router bgp 200
+neighbor 1.1.1.1 update-source lo0
+neighbor 1.1.1.1 ebgp-multihop 2
+
+=======
+R6) 추가 ibgp 설정
+conf t
+int s1/2
+ip add 2.2.26.6 255.255.255.0
+no sh
+
+int s1/0
+ip add 2.2.46.6 255.255.255.0
+no sh
+
+int lo0
+ip add 6.6.6.6 255.255.255.0
+
+router ospf 1
+network 2.2.26.6 0.0.0.0 a 0
+network 2.2.46.6 0.0.0.0 a 0
+network 6.6.6.6 0.0.0.0 a 0
+
+router bgp 200
+neighbor 2.2.2.2 remote-as 200
+neighbor 2.2.2.2 update-source lo0
+neighbor 4.4.4.4 remote-as 200
+neighbor 4.4.4.4 update-source lo0
+
+R2)
+int s1/2
+ip add 2.2.26.2 255.255.255.0
+no sh
+
+router ospf 1
+network 2.2.26.2 0.0.0.0 a 0
+
+router bgp 200
+neighbor 6.6.6.6 remote-as 200
+neighbor 6.6.6.6 update-source lo0
+neighbor 6.6.6.6 next-hop-self
+
+R4)
+int s1/0
+ip add 2.2.46.4 255.255.255.0
+no sh
+
+router ospf 1
+network 2.2.46.4 0.0.0.0 a 0
+
+router bgp 200
+neighbor 6.6.6.6 remote-as 200
+neighbor 6.6.6.6 update-source lo0
+neighbor 6.6.6.6 next-hop-self
+
+=====================
+ - BGP 설정
+1. neighbor 설정
+2. IBGP 설정시 nexthop-self
+3. loopback 인터페이스를 이용해서
+    neighbor 설정시 update-source 추가
+4. eBGP 설정시 neighbor로 loopback을
+    이용할 경우, 라우팅정보 통신 확보,
+    eBGP-multihop 추가
+5. network 명령을 이용해서 네트워크 광고
+   반드시 라우팅 테이블에 있는 정보와 일지
+   해야한다.
+
+R2)
+do sh ip bgp
+
+
+
+R2,4연결 끊기
+
+R2)
+
+router bgp 200
+no network 2.2.2.0 mask 255.255.255.0
+neighbor 4.4.4.4 remote-as 200
+
+R4)
+
+router bgp 200
+no neighbor 2.2.2.2 remote-as 200
+do sh ip bgp
+
+
+R3,6이 route-reflector를 설정하고 
+R2,4를 client로 설정한다.
+
+R3)
+router bgp 200
+neighbor 2.2.2.2 route-reflector-client
+neighbor 4.4.4.4 route-reflector-client
+
+
+R6)
+router bgp 200
+neighbor 2.2.2.2 route-reflector-client
+neighbor 4.4.4.4 route-reflector-client
