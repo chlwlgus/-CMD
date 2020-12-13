@@ -1,0 +1,374 @@
+R4)
+conf t
+int s1/1
+ip add 2.2.49.4 255.255.255.0
+no sh
+
+router ospf 1
+network 2.2.49.4 0.0.0.0 a 0
+
+R5)
+conf t
+int s1/0
+ip add 2.2.57.5 255.255.255.0
+no sh
+
+R7)
+conf t
+int s1/0
+ip add 2.2.57.7 255.255.255.0
+no sh
+
+int s1/1
+ip add 2.2.78.7 255.255.255.0
+no sh
+
+int lo0
+ip add 7.7.7.7 255.255.255.0
+
+router eigrp 400
+network 2.2.78.7 0.0.0.0
+network 7.7.7.7 0.0.0.0
+no auto-summary  
+
+R8)
+conf t
+int s1/1
+ip add 2.2.78.8 255.255.255.0
+no sh
+
+int s1/2
+ip add 2.2.89.8 255.255.255.0
+no sh
+
+int lo0
+ip add 8.8.8.8 255.255.255.0
+
+router eigrp 400
+network 2.2.78.8 0.0.0.0
+network 2.2.89.8 0.0.0.0
+network 8.8.8.8 0.0.0.0
+no auto-summary
+
+R9)
+conf t
+int s1/1
+ip add 2.2.49.9 255.255.255.0
+no sh
+
+int s1/2
+ip add 2.2.89.9 255.255.255.0
+no sh
+
+int lo0
+ip add 9.9.9.9 255.255.255.0
+
+router eigrp 400
+network 2.2.89.9 0.0.0.0
+net 9.9.9.9 0.0.0.0
+no auto-summary 
+
+============
+1. R5 - R7, R4 - R8 eBGP설정 (neighbor는 시리얼 인터페이스 ip로 설정)
+R5)             ***bgp 번호가 위 아래가 다르면 (아래 R5인 경우 router bgp 300, remote-as 400)
+router bgp 300          이다. 이러한 경우는 eBGP이다.
+neighbor 2.2.57.7 remote-as 400
+
+R7)
+router bgp 400
+neighbor 2.2.57.5 remote-as 300
+
+R4)
+router bgp 200
+neighbor 2.2.49.9 remote-as 400
+
+R8)
+router bgp 400
+neighbor 7.7.7.7 remote-as 400
+
+R9)
+router bgp 400
+neighbor 2.2.49.4 remote-as 200
+
+2. R7 - R8, R7 - R9, R8 - R9 iBGP설정 (neighbor는 루프백 주소로 설정)
+***기본 규칙 bgp 번호가 위 아래가 같으면 (아래 R7인 경우 router bgp 400, remote-as 400)이다. 
+이러한 경우는 iBGP이다. 그리고 update-source는 neighbor를 걸린쪽에서 작성한다.
+R7에서 R8로 걸은 경우 R8에 neighbor 7.7.7.7 update-source lo0를 작성한다.
+R7)
+router bgp 400
+neighbor 8.8.8.8 remote as 400
+neighbor 8.8.8.8 update-source lo0
+neighbor 8.8.8.8 next-hop-self
+neighbor 9.9.9.9 remote-as 400
+neighbor 9.9.9.9 update-source lo0
+neighbor 9.9.9.9 next-hop-self 
+
+R8)
+router bgp 400
+neighbor 7.7.7.7 remote-as 400
+neighbor 7.7.7.7 update-source lo0
+neighbor 9.9.9.9 remote-as 400
+neighbor 9.9.9.9 update-source lo0
+
+R9)
+router bgp 400
+neighbor 7.7.7.7 remote-as 400
+neighbor 7.7.7.7 update-source lo0
+neighbor 7.7.7.7 next-hop-self 
+neighbor 8.8.8.8 remote-as 400
+neighbor 8.8.8.8 update-source lo0
+neighbor 8.8.8.8 next-hop-self 
+
+================
+R7,8 9) 위에 설정 지우기
+no router bgp 400
+
+ - confederation
+R7)
+router bgp 65000
+bgp confederation identifier 400
+neighbor 2.2.57.5 remote-as 300
+neighbor 8.8.8.8 remote-as 65000
+neighbor 8.8.8.8 update-source lo0
+neighbor 8.8.8.8 next-hop-self
+
+R8)
+router bgp 65000
+bgp confederation identifier 400
+bgp confederation peers 65100
+neighbor 7.7.7.7 remote-as 65000
+neighbor 7.7.7.7 update-source lo0
+neighbor 9.9.9.9 remote-as 65100
+neighbor 9.9.9.9 update-source lo0
+neighbor 9.9.9.9 ebgp-multihop 2
+
+R9)
+router bgp 65100
+bgp confederation identifier 400
+bgp confederation peers 65000
+neighbor 8.8.8.8 remote-as 65000
+neighbor 8.8.8.8 update-source lo0
+neighbor 8.8.8.8 ebgp-multihop 2
+neighbor 8.8.8.8 next-hop-self
+neighbor 2.2.49.4 remote-as 200
+===================
+
+ - show ip bgp summary: bgp정보와 neighbor 정보
+
+ - show ip bgp : BGP 테이블(데이터베이스) 정보 확인
+
+R2)라우터에가서 루프백 네트워크를 재분배 하기
+conf t
+access-list 2 deny 2.2.12.0 0.0.0.255
+access-list 2 deny 2.2.21.0 0.0.0.255
+access-list 2 permit 2.2.2.0 0.0.0.255
+
+route-map redi permit 10
+match ip address 2
+
+router bgp 200
+redistribute connected route-map  redi
+
+
+R2)
+no neighbor 3.3.3.3 next-hop-self
+no neighbor 6.6.6.6 next-hop-self
+no neighbor 4.4.4.4 remote-as 200
+neighbor 3.3.3.3 next-hop-self
+neighbor 6.6.6.6 next-hop-self
+
+R3)
+do sh ip bgp
+do clear ip bgp *
+
+============
+R5,7사이 연결 끊기
+
+R1에 네트워크 추가
+
+R1)
+conf t
+int lo1
+ip add 100.1.0.1 255.255.255.0
+ip add 100.1.1.1 255.255.255.0 secondary
+ip add 100.1.2.1 255.255.255.0 secondary
+ip add 100.1.3.1 255.255.255.0 secondary
+
+router bgp 100
+network 100.1.0.0 mask 255.255.255.0
+network 100.1.1.0 mask 255.255.255.0
+network 100.1.2.0 mask 255.255.255.0
+network 100.1.3.0 mask 255.255.255.0
+
+R9)
+access-list 9 deny 100.1.1.0 0.0.0.255
+access-list 9 deny 100.1.3.0 0.0.0.255
+access-list 9 permit 100.1.0.0 0.0.0.255
+access-list 9 permit 100.1.2.0 0.0.0.255
+
+router bgp 65100
+distribute-list 9 in
+do clear ip bgp * soft
+
+no access-list 9
+access-list 9 deny 100.1.1.0 0.0.0.255
+access-list 9 deny 100.1.3.0 0.0.0.255
+access-list 9 permit any
+
+sh access-list
+
+ - BGP 정책 변경시 반영하는 방법
+clear ip bgp * soft => route refresh 메시지 전송
+clear ip bgp * => TCP 재연결
+
+=====================================
+R1,7 pc 연결
+
+ - R1과 R7 사이 통신 확보(루프백 ip 주소간)
+ - 192.168.1.0/24와 192.168.7.0/24 네트워크를 GRE ipsec vpn 연결하여 연결
+
+
+R1)
+conf t
+int f0/0
+ip add 192.168.1.254 255.255.255.0
+ip nat inside
+no sh
+
+int s1/0
+ip nat outside
+
+int s1/3
+ip nat outside
+
+access-list 1 permit 192.168.1.0 0.0.0.255
+ip nat inside source list 1 int lo0
+
+R7)
+int f0/0
+ip add 192.168.7.254 255.255.255.0
+ip nat inside
+no sh
+
+int s1/1
+ip nat outside
+
+access-list 7 permit 192.168.7.0 0.0.0.255
+ip nat inside source list 7 int lo0
+
+router bgp 65000
+network 7.7.7.0 mask 255.255.255.0
+
+
+R1)
+int tun 1
+tunnel source 1.1.1.1
+tunnel destination 7.7.7.7
+ip unnumbered f0/0
+
+ip route 192.168.7.0 255.255.255.0 tun 1
+
+R7)
+int tun 7
+tunnel source 7.7.7.7
+tunnel destination 1.1.1.1
+ip unnumbered f0/0
+
+ip route 192.168.1.0 255.255.255.0 tun 7
+
+ - crypto map을 이용한 방법
+
+R1)
+crypto isakmp policy 10
+	encryption aes
+	authentication pre-share
+	group 2
+	exit
+-----------------------위에가 1단계
+
+crypto isakmp key cisco address 0.0.0.0 0.0.0.0
+
+
+ip access-list extended R1-VPN
+	permit gre host 1.1.1.1 host 7.7.7.7
+        exit
+
+crypto ipsec transform-set r1-policy esp-aes esp-md5-hmac ------2단계
+
+
+crypto map vpn1 local-address Loopback0 -------루프백0을 출발지 ip로 하겠다
+crypto map vpn1 100 ipsec-isakmp 
+ set peer 7.7.7.7
+ set transform-set r1-policy 
+ match address R1-VPN     ----crypto map은 이 3가지가 없으면 작동을 안함
+
+no access-list 1
+access-list 101 deny ip 192.168.1.0 0.0.0.255 192.168.7.0 0.0.0.255
+access-list 101 permit ip 192.168.1.0 0.0.0.255 any
+
+no ip nat inside source list 1 int lo0
+ip nat inside source list 101 int lo0
+
+int s1/0
+crypto map vpn1
+
+int s1/3
+crypto map vpn1
+
+R7)
+crypto isakmp policy 10
+	encryption aes
+	authentication pre-share
+	group 2
+	exit
+
+
+crypto isakmp key cisco address 1.1.1.1
+
+
+ip access-list extended R7-VPN
+	permit gre host 7.7.7.7 host 1.1.1.1
+        exit
+
+crypto ipsec transform-set r7-policy esp-aes esp-md5-hmac
+
+
+crypto map vpn7 local-address Loopback0
+crypto map vpn7 100 ipsec-isakmp 
+ set peer 1.1.1.1
+ set transform-set r7-policy 
+ match address R7-VPN
+
+
+no access-list 7
+access-list 107 deny ip 192.168.7.0 0.0.0.255 192.168.1.0 0.0.0.255
+access-list 101 permit ip 192.168.7.0 0.0.0.255 any
+
+no ip nat inside source list 7 int lo0
+ip nat inside source list 107 int 
+
+int s1/1
+crypto map vpn7
+
+  - tunnel protection을 이용한 방법
+R1)
+crypto isakmp policy 10
+encryption aes
+authentication pre-share
+group 2
+exit
+
+crypto isakmp key cisco address 0.0.0.0 0.0.0.0
+
+crypto ipsec profile r1-profile
+
+R7)
+crypto isakmp policy 10
+encryption aes
+authentication pre-share
+group 2
+exit
+
+crypto isakmp key cisco address 0.0.0.0 0.0.0.0
+
+crypto ipsec prifile r7-profile
